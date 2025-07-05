@@ -76,3 +76,8 @@ petgrooming-admin/
 │   └── style.css         # (empty for now)
 └── README.md
 
+View list of saved customers
+4️⃣ View all customers:
+http://127.0.0.1:5000/customers
+
+Now styled with Bootstrap
