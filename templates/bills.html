@@ -13,6 +13,7 @@
       <th>Amount</th>
       <th>Date</th>
       <th>Notes</th>
+      <th>Actions</th>
     </tr>
   </thead>
   <tbody>
@@ -24,6 +25,9 @@
       <td>${{ bill[3] }}</td>
       <td>{{ bill[4] }}</td>
       <td>{{ bill[5] }}</td>
+      <td>
+        <a href="/bills/{{ bill[0] }}/pdf" class="btn btn-sm btn-secondary">Print / PDF</a>
+      </td>
     </tr>
     {% else %}
     <tr>

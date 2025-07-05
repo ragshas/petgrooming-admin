@@ -81,3 +81,102 @@ View list of saved customers
 http://127.0.0.1:5000/customers
 
 Now styled with Bootstrap
+
+
+# Pet Grooming Admin Portal 🐶✂️
+
+A simple, modular admin portal built in Python (Flask) to help manage a pet grooming business.  
+This is the first version — built to be extended over time.
+
+---
+
+## ✅ Current Features
+
+- Add and view customers
+- Add and view bills (linked to customers)
+- Clean Bootstrap design
+- SQLite database for easy local storage
+
+---
+
+## 🚀 Planned Next Features
+
+- Print/export bills as PDF
+- Edit/delete bills and customers
+- Authentication (admin login)
+
+---
+
+## ⚙️ Tech Stack
+
+- Python 3.x
+- Flask
+- SQLite
+- HTML / Bootstrap (via CDN)
+
+---
+
+## 🏁 How to Run Locally
+
+```bash
+# Install dependencies
+pip install flask
+
+# Initialize database (creates database.db)
+python init_db.py
+
+# Run the server
+python app.py
+
+petgrooming-admin/
+├── app.py                # Main Flask app
+├── init_db.py            # Script to create DB tables
+├── database.db           # SQLite DB (ignored by Git)
+├── templates/            # HTML templates
+│   ├── base.html
+│   ├── add_customer.html
+│   ├── customers.html
+│   ├── add_bill.html
+│   └── bills.html
+├── static/               # (Optional: future CSS/JS/images)
+└── README.md
+
+
+---
+
+### ✅ **Tip:**  
+- Replace `[your name / GitHub username]` with your actual name.
+- Add project screenshots later if you want (looks very professional!).
+
+---
+
+## 📦 **Next Steps (as you asked):**
+
+✅ **1️⃣ Print/export bills as PDF**  
+- Add a route like `/bills/<id>/pdf` → generate a PDF from bill data.
+- Use a library like `pdfkit` or `reportlab` (I’ll guide you).
+
+✅ **2️⃣ Edit/delete bills (and customers)**  
+- Add routes & templates to edit / delete.
+- Add buttons on bills & customers tables.
+
+✅ **3️⃣ Authentication (login)**  
+- Add login page (Flask sessions).
+- Only allow logged-in admin to add/edit/delete.
+
+---
+
+## 🏁 **Ready?**
+We’ll do them **one by one**, small commits, so you keep learning and stay modular.
+
+> ✔ If you'd like, say:  
+✅ *"Yes, start with PDF export"*  
+and I’ll write the **complete beginner‑friendly steps + code**.
+
+---
+
+🌱 You're now running a real open‑source‑style project: README, git history, roadmap! 🚀  
+Just tell me:  
+✅ “Yes, PDF first”  
+or  
+❓ if you want to do edit/delete first!

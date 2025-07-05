@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, make_response
 import sqlite3
 from datetime import datetime
+from weasyprint import HTML
 
 app = Flask(__name__)
 
@@ -78,6 +79,29 @@ def bills():
     conn.close()
     return render_template('bills.html', bills=all_bills)
 
+@app.route('/bills/<int:bill_id>/pdf')
+def bill_pdf(bill_id):
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute('''
+        SELECT bills.id, customers.name, bills.service, bills.amount, bills.date, bills.notes
+        FROM bills
+        JOIN customers ON bills.customer_id = customers.id
+        WHERE bills.id = ?
+    ''', (bill_id,))
+    bill = c.fetchone()
+    conn.close()
+
+    if bill:
+        rendered = render_template('bill_pdf.html', bill=bill)
+        pdf = HTML(string=rendered).write_pdf()
+
+        response = make_response(pdf)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'inline; filename=bill_{bill[0]}.pdf'
+        return response
+    else:
+        return "Bill not found", 404
 
 
 if __name__ == '__main__':
