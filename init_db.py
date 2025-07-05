@@ -16,7 +16,21 @@ CREATE TABLE IF NOT EXISTS customers (
 )
 ''')
 
+# Create bills table if it doesn't exist
+c.execute('''
+CREATE TABLE IF NOT EXISTS bills (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER,
+    service TEXT NOT NULL,
+    amount REAL NOT NULL,
+    date TEXT NOT NULL,
+    notes TEXT,
+    FOREIGN KEY (customer_id) REFERENCES customers (id)
+)
+''')
+
+
 conn.commit()
 conn.close()
 
-print("✅ Database and table created successfully!")
+print("Database initialized successfully! Customers and Bills tables are ready.")

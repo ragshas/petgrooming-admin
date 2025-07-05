@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -38,6 +39,45 @@ def customers():
     all_customers = c.fetchall()
     conn.close()
     return render_template('customers.html', customers=all_customers)
+
+
+@app.route('/add_bill', methods=['GET', 'POST'])
+def add_bill():
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute("SELECT id, name FROM customers")
+    customers = c.fetchall()
+    
+    if request.method == 'POST':
+        customer_id = request.form['customer_id']
+        service = request.form['service']
+        amount = request.form['amount']
+        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        notes = request.form['notes']
+        
+        c.execute("INSERT INTO bills (customer_id, service, amount, date, notes) VALUES (?, ?, ?, ?, ?)",
+                  (customer_id, service, amount, date, notes))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('bills'))
+    
+    conn.close()
+    return render_template('add_bill.html', customers=customers)
+
+@app.route('/bills')
+def bills():
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute('''
+        SELECT bills.id, customers.name, bills.service, bills.amount, bills.date, bills.notes
+        FROM bills
+        JOIN customers ON bills.customer_id = customers.id
+        ORDER BY bills.date DESC
+    ''')
+    all_bills = c.fetchall()
+    conn.close()
+    return render_template('bills.html', bills=all_bills)
+
 
 
 if __name__ == '__main__':
