@@ -253,7 +253,7 @@ Added edit and delete for customers.
 
 Next to create login page and authenitcation.
 
-## Admin/User Authentication & Permissions (July 5, 2025)
+## 🛡️ Admin/User Authentication & Permissions (July 5, 2025)
 
 - Added secure login/logout with session management and password hashing.
 - Created user roles (admin/user) and fine-grained permissions (add/edit/delete for customers and bills).
@@ -262,12 +262,19 @@ Next to create login page and authenitcation.
 - Enforced permissions in both backend logic and UI (navbar hides on login, protected routes require login).
 - Improved security: all sensitive pages require authentication, session is cleared on logout/switch user.
 - Enhanced user feedback with flash messages for permission errors.
+- Added admin override: if a user lacks permission to edit/delete, they are prompted for admin credentials. After successful authentication, the action is performed or the user is allowed to proceed.
+- Ensured that edit/delete actions are only allowed for the specific record and action after admin override, and that changes are saved immediately after admin authentication.
 
-Implement full authentication, user roles, permissions, and secure navigation
+---
 
-- Added login/logout with password hashing and session management
-- Created user management (add/edit users, set roles and permissions)
-- Enforced permissions in backend for all sensitive routes
-- Improved navbar (user icon, logout/switch user, hides on login)
-- Added flash messages for permission errors and feedback
-- Secured all pages: no access without login
+## Example Git Commit Message
+
+```
+Implement admin override and robust permission enforcement
+
+- Added admin override for edit/delete actions: prompt for admin credentials if user lacks permission
+- After successful admin authentication, perform the action or allow the user to proceed
+- Store pending edit form data in session to ensure changes are saved after admin override
+- Improved security and user experience for all permission-protected actions
+- Updated README with new authentication and override features
+```

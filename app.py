@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, make_response, session, flash
+from flask import Flask, render_template, request, redirect, url_for, make_response, session, flash, jsonify
 import sqlite3
 from datetime import datetime
 from weasyprint import HTML
 from functools import wraps
 from werkzeug.security import check_password_hash, generate_password_hash
+import json
 
 # Create a Flask web application instance
 app = Flask(__name__)
@@ -152,9 +153,15 @@ def bill_pdf(bill_id):
 @app.route('/bills/<int:bill_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_bill(bill_id):
-    if session.get('admin_role') != 'admin' and not session.get('can_edit_bill', 1):
-        flash('You do not have permission to edit bills.', 'danger')
-        return redirect(url_for('dashboard'))
+    admin_override = session.get('admin_override')
+    allow_override = admin_override and admin_override.get('action') == 'edit_bill' and str(admin_override.get('target_id')) == str(bill_id)
+    if session.get('admin_role') != 'admin' and not session.get('can_edit_bill', 1) and not allow_override:
+        if request.method == 'POST':
+            session['pending_edit_bill'] = request.form.to_dict()
+            return redirect(url_for('admin_auth', action='edit_bill', target_id=bill_id))
+        return redirect(url_for('admin_auth', action='edit_bill', target_id=bill_id))
+    if allow_override:
+        session.pop('admin_override', None)
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
 
@@ -180,9 +187,12 @@ def edit_bill(bill_id):
 @app.route('/bills/<int:bill_id>/delete')
 @login_required
 def delete_bill(bill_id):
-    if session.get('admin_role') != 'admin' and not session.get('can_delete_bill', 1):
-        flash('You do not have permission to delete bills.', 'danger')
-        return redirect(url_for('dashboard'))
+    admin_override = session.get('admin_override')
+    allow_override = admin_override and admin_override.get('action') == 'delete_bill' and str(admin_override.get('target_id')) == str(bill_id)
+    if session.get('admin_role') != 'admin' and not session.get('can_delete_bill', 1) and not allow_override:
+        return redirect(url_for('admin_auth', action='delete_bill', target_id=bill_id))
+    if allow_override:
+        session.pop('admin_override', None)
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
     c.execute('DELETE FROM bills WHERE id=?', (bill_id,))
@@ -194,9 +204,15 @@ def delete_bill(bill_id):
 @app.route('/customers/<int:customer_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_customer(customer_id):
-    if session.get('admin_role') != 'admin' and not session.get('can_edit_customer', 1):
-        flash('You do not have permission to edit customers.', 'danger')
-        return redirect(url_for('dashboard'))
+    admin_override = session.get('admin_override')
+    allow_override = admin_override and admin_override.get('action') == 'edit_customer' and str(admin_override.get('target_id')) == str(customer_id)
+    if session.get('admin_role') != 'admin' and not session.get('can_edit_customer', 1) and not allow_override:
+        if request.method == 'POST':
+            session['pending_edit_customer'] = request.form.to_dict()
+            return redirect(url_for('admin_auth', action='edit_customer', target_id=customer_id))
+        return redirect(url_for('admin_auth', action='edit_customer', target_id=customer_id))
+    if allow_override:
+        session.pop('admin_override', None)
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
 
@@ -228,9 +244,13 @@ def edit_customer(customer_id):
 @app.route('/customers/<int:customer_id>/delete')
 @login_required
 def delete_customer(customer_id):
-    if session.get('admin_role') != 'admin' and not session.get('can_delete_customer', 1):
-        flash('You do not have permission to delete customers.', 'danger')
-        return redirect(url_for('dashboard'))
+    admin_override = session.get('admin_override')
+    allow_override = admin_override and admin_override.get('action') == 'delete_customer' and str(admin_override.get('target_id')) == str(customer_id)
+    if session.get('admin_role') != 'admin' and not session.get('can_delete_customer', 1) and not allow_override:
+        # Prompt for admin credentials before showing the delete confirmation
+        return redirect(url_for('admin_auth', action='delete_customer', target_id=customer_id))
+    if allow_override:
+        session.pop('admin_override', None)
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
     c.execute('DELETE FROM customers WHERE id=?', (customer_id,))
@@ -351,6 +371,67 @@ def edit_user(user_id):
     user = c.fetchone()
     conn.close()
     return render_template('edit_user.html', user=user)
+
+# Admin override route
+@app.route('/admin_auth', methods=['GET', 'POST'])
+@login_required
+def admin_auth():
+    if request.method == 'POST':
+        admin_username = request.form['admin_username']
+        admin_password = request.form['admin_password']
+        action = request.form['action']
+        target_id = request.form['target_id']
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        c.execute('SELECT password FROM users WHERE username=? AND role="admin"', (admin_username,))
+        admin = c.fetchone()
+        conn.close()
+        from werkzeug.security import check_password_hash
+        if admin and check_password_hash(admin[0], admin_password):
+            # If pending edit, perform it now
+            if action == 'edit_customer' and 'pending_edit_customer' in session:
+                form_data_dict = session.pop('pending_edit_customer')
+                name = form_data_dict.get('name')
+                phone = form_data_dict.get('phone')
+                email = form_data_dict.get('email')
+                pet_name = form_data_dict.get('pet_name')
+                pet_type = form_data_dict.get('pet_type')
+                notes = form_data_dict.get('notes')
+                conn = sqlite3.connect('database.db')
+                c = conn.cursor()
+                c.execute('''UPDATE customers SET name=?, phone=?, email=?, pet_name=?, pet_type=?, notes=? WHERE id=?''',
+                    (name, phone, email, pet_name, pet_type, notes, target_id))
+                conn.commit()
+                conn.close()
+                flash('Customer updated successfully (admin override).', 'success')
+                return redirect(url_for('customers'))
+            elif action == 'edit_bill' and 'pending_edit_bill' in session:
+                form_data_dict = session.pop('pending_edit_bill')
+                service = form_data_dict.get('service')
+                amount = form_data_dict.get('amount')
+                notes = form_data_dict.get('notes')
+                conn = sqlite3.connect('database.db')
+                c = conn.cursor()
+                c.execute('UPDATE bills SET service=?, amount=?, notes=? WHERE id=?',
+                    (service, amount, notes, target_id))
+                conn.commit()
+                conn.close()
+                flash('Bill updated successfully (admin override).', 'success')
+                return redirect(url_for('bills'))
+            # For delete or GET, just set override flag
+            session['admin_override'] = {'action': action, 'target_id': target_id}
+            flash('Admin authorization successful. Please retry your action.', 'success')
+            if action in ['edit_customer', 'delete_customer']:
+                return redirect(url_for('customers'))
+            elif action in ['edit_bill', 'delete_bill']:
+                return redirect(url_for('bills'))
+        else:
+            flash('Invalid admin credentials.', 'danger')
+            return render_template('admin_auth.html', action=action, target_id=target_id)
+    # GET: show form
+    action = request.args.get('action')
+    target_id = request.args.get('target_id')
+    return render_template('admin_auth.html', action=action, target_id=target_id)
 
 # Apply login_required to protected routes
 app.view_functions['customers'] = login_required(app.view_functions['customers'])
