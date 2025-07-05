@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Manage Users{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <h2 class="mb-4">User Management</h2>
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Role</th>
+          <th>Permissions</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>{{ user[1] }}</td>
+          <td>{{ user[3] }}</td>
+          <td>
+            Add Customer: {{ 'Yes' if user[4] else 'No' }},
+            Edit Customer: {{ 'Yes' if user[5] else 'No' }},
+            Delete Customer: {{ 'Yes' if user[6] else 'No' }},<br>
+            Add Bill: {{ 'Yes' if user[7] else 'No' }},
+            Edit Bill: {{ 'Yes' if user[8] else 'No' }},
+            Delete Bill: {{ 'Yes' if user[9] else 'No' }}
+          </td>
+          <td>
+            <a href="/edit_user/{{ user[0] }}" class="btn btn-sm btn-primary">Edit</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <a href="/add_user" class="btn btn-success mb-3">Add New User</a>
+  </div>
+</div>
+{% endblock %}

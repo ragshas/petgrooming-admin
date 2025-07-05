@@ -10,14 +10,14 @@
 </head>
 <body>
 
+{% if request.endpoint != 'login' %}
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
   <div class="container-fluid">
-    <a class="navbar-brand" href="/">Pet Grooming Admin</a>
+    <a class="navbar-brand" href="/dashboard">Pet Grooming Admin</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
       aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
-    
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav">
         <li class="nav-item">
@@ -33,11 +33,34 @@
           <a class="nav-link" href="/bills">View Bills</a>
         </li>
       </ul>
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="User" width="28" height="28" class="rounded-circle me-1">
+            {{ session['admin_username'] if session['admin_logged_in'] else 'User' }}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+            <li><a class="dropdown-item text-danger" href="/logout">Logout</a></li>
+            <li><a class="dropdown-item" href="/logout">Switch User</a></li>
+          </ul>
+        </li>
+      </ul>
     </div>
   </div>
 </nav>
+{% endif %}
 
 <div class="container mt-4">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
   {% block content %}{% endblock %}
 </div>
 

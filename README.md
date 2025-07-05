@@ -248,3 +248,26 @@ petgrooming-admin/
 │   └── bill_pdf.html
 ├── static/               # (Optional: CSS/JS/images)
 └── README.md
+
+Added edit and delete for customers.
+
+Next to create login page and authenitcation.
+
+## Admin/User Authentication & Permissions (July 5, 2025)
+
+- Added secure login/logout with session management and password hashing.
+- Created user roles (admin/user) and fine-grained permissions (add/edit/delete for customers and bills).
+- Built user management: admin can add, edit, and set permissions for users.
+- Implemented a dashboard and improved navigation (user icon, logout/switch user dropdown).
+- Enforced permissions in both backend logic and UI (navbar hides on login, protected routes require login).
+- Improved security: all sensitive pages require authentication, session is cleared on logout/switch user.
+- Enhanced user feedback with flash messages for permission errors.
+
+Implement full authentication, user roles, permissions, and secure navigation
+
+- Added login/logout with password hashing and session management
+- Created user management (add/edit users, set roles and permissions)
+- Enforced permissions in backend for all sensitive routes
+- Improved navbar (user icon, logout/switch user, hides on login)
+- Added flash messages for permission errors and feedback
+- Secured all pages: no access without login

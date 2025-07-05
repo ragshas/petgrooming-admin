@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Add User{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <h2 class="mb-4">Add New User</h2>
+    <form method="post">
+      <div class="mb-3">
+        <label class="form-label">Username:</label>
+        <input class="form-control" type="text" name="username" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Password:</label>
+        <input class="form-control" type="password" name="password" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Role:</label>
+        <select class="form-select" name="role">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Permissions:</label><br>
+        <div class="mb-2">
+          <label>Add Customer:</label>
+          <input type="radio" name="can_add_customer" value="1" checked> Enable
+          <input type="radio" name="can_add_customer" value="0"> Disable
+        </div>
+        <div class="mb-2">
+          <label>Edit Customer:</label>
+          <input type="radio" name="can_edit_customer" value="1" checked> Enable
+          <input type="radio" name="can_edit_customer" value="0"> Disable
+        </div>
+        <div class="mb-2">
+          <label>Delete Customer:</label>
+          <input type="radio" name="can_delete_customer" value="1" checked> Enable
+          <input type="radio" name="can_delete_customer" value="0"> Disable
+        </div>
+        <div class="mb-2">
+          <label>Add Bill:</label>
+          <input type="radio" name="can_add_bill" value="1" checked> Enable
+          <input type="radio" name="can_add_bill" value="0"> Disable
+        </div>
+        <div class="mb-2">
+          <label>Edit Bill:</label>
+          <input type="radio" name="can_edit_bill" value="1" checked> Enable
+          <input type="radio" name="can_edit_bill" value="0"> Disable
+        </div>
+        <div class="mb-2">
+          <label>Delete Bill:</label>
+          <input type="radio" name="can_delete_bill" value="1" checked> Enable
+          <input type="radio" name="can_delete_bill" value="0"> Disable
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Add User</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
