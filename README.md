@@ -180,3 +180,71 @@ Just tell me:
 ✅ “Yes, PDF first”  
 or  
 ❓ if you want to do edit/delete first!
+
+# 🐶✂️ Pet Grooming Admin Portal
+
+A simple, modular admin portal built in Python (Flask) to help manage a pet grooming business.  
+This is the first version — designed to grow over time.
+
+---
+
+## ✅ Current Features
+
+- Add, view, edit & delete customers
+- Add, view, edit & delete bills linked to customers
+- Print / export bills to PDF
+- Clean Bootstrap interface
+- SQLite database (simple, file-based, great for small business)
+
+---
+
+## 🚀 Planned Next Features
+
+- Authentication (admin login)
+- Better PDF templates & logos
+- Search/filter customers & bills
+- Dashboard / analytics
+
+---
+
+## ⚙️ Tech Stack
+
+- Python 3.x
+- Flask
+- SQLite
+- HTML / Bootstrap (via CDN)
+- [WeasyPrint](https://weasyprint.org/) (for PDF export)
+
+---
+
+## 🏁 How to Run Locally
+
+```bash
+# Install dependencies
+pip install flask weasyprint cairocffi
+
+# Initialize database (creates database.db)
+python init_db.py
+
+# Run the server
+python app.py
+
+⚠ For PDF export:
+On Windows, install GTK runtime → add bin folder to PATH.
+Guide here
+
+petgrooming-admin/
+├── app.py                # Main Flask app
+├── init_db.py            # Script to create DB tables
+├── database.db           # SQLite DB (ignored by Git)
+├── templates/            # HTML templates
+│   ├── base.html
+│   ├── add_customer.html
+│   ├── edit_customer.html
+│   ├── customers.html
+│   ├── add_bill.html
+│   ├── edit_bill.html
+│   ├── bills.html
+│   └── bill_pdf.html
+├── static/               # (Optional: CSS/JS/images)
+└── README.md

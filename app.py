@@ -133,6 +133,41 @@ def delete_bill(bill_id):
     conn.close()
     return redirect(url_for('bills'))
 
+@app.route('/customers/<int:customer_id>/edit', methods=['GET', 'POST'])
+def edit_customer(customer_id):
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+
+    if request.method == 'POST':
+        name = request.form['name']
+        phone = request.form['phone']
+        email = request.form['email']
+        pet_name = request.form['pet_name']
+        pet_type = request.form['pet_type']
+        notes = request.form['notes']
+
+        c.execute('''
+            UPDATE customers
+            SET name=?, phone=?, email=?, pet_name=?, pet_type=?, notes=?
+            WHERE id=?
+        ''', (name, phone, email, pet_name, pet_type, notes, customer_id))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('customers'))
+
+    c.execute('SELECT * FROM customers WHERE id=?', (customer_id,))
+    customer = c.fetchone()
+    conn.close()
+    return render_template('edit_customer.html', customer=customer)
+
+@app.route('/customers/<int:customer_id>/delete')
+def delete_customer(customer_id):
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute('DELETE FROM customers WHERE id=?', (customer_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('customers'))
 
 if __name__ == '__main__':
     app.run(debug=True)
