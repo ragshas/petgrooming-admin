@@ -103,6 +103,36 @@ def bill_pdf(bill_id):
     else:
         return "Bill not found", 404
 
+@app.route('/bills/<int:bill_id>/edit', methods=['GET', 'POST'])
+def edit_bill(bill_id):
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+
+    if request.method == 'POST':
+        service = request.form['service']
+        amount = request.form['amount']
+        notes = request.form['notes']
+
+        c.execute('UPDATE bills SET service=?, amount=?, notes=? WHERE id=?',
+                  (service, amount, notes, bill_id))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('bills'))
+
+    c.execute('SELECT id, service, amount, notes FROM bills WHERE id=?', (bill_id,))
+    bill = c.fetchone()
+    conn.close()
+    return render_template('edit_bill.html', bill=bill)
+
+@app.route('/bills/<int:bill_id>/delete')
+def delete_bill(bill_id):
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute('DELETE FROM bills WHERE id=?', (bill_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('bills'))
+
 
 if __name__ == '__main__':
     app.run(debug=True)
