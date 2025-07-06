@@ -1,13 +1,14 @@
+from decorators import login_required
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 import sqlite3
 from db import get_db   # reuse the helper
 
+
 customers_bp = Blueprint('customers', __name__)
 
 @customers_bp.route('/customers')
+@login_required
 def customers():
-    if 'username' not in session:
-        return redirect(url_for('auth.login'))
     conn = get_db()
     c = conn.cursor()
     c.execute('SELECT * FROM customers')
@@ -16,9 +17,8 @@ def customers():
     return render_template('customers.html', customers=customers)
 
 @customers_bp.route('/add_customer', methods=['GET', 'POST'])
+@login_required
 def add_customer():
-    if 'username' not in session:
-        return redirect(url_for('auth.login'))
     if request.method == 'POST':
         name = request.form['name']
         phone = request.form['phone']
@@ -39,9 +39,12 @@ def add_customer():
     return render_template('add_customer.html')
 
 @customers_bp.route('/customers/<int:customer_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_customer(customer_id):
-    if 'username' not in session:
-        return redirect(url_for('auth.login'))
+    if session.get('role') != 'admin':
+        flash('Only admins can edit customers.', 'danger')
+        return redirect(url_for('customers.customers'))
+
     conn = get_db()
     c = conn.cursor()
     if request.method == 'POST':
@@ -58,8 +61,18 @@ def edit_customer(customer_id):
         ''', (name, phone, email, pet_name, pet_type, notes, customer_id))
         conn.commit()
         conn.close()
-        flash('Customer updated successfully!')
-        return redirect(url_for('customers.customers'))
+        flash('Customer updated successfully!', 'success')
+        # Instead of redirect, show the edit page with the message
+        customer = {
+            'id': customer_id,
+            'name': name,
+            'phone': phone,
+            'email': email,
+            'pet_name': pet_name,
+            'pet_type': pet_type,
+            'notes': notes
+        }
+        return render_template('edit_customer.html', customer=customer)
 
     c.execute('SELECT * FROM customers WHERE id=?', (customer_id,))
     customer = c.fetchone()
@@ -67,9 +80,11 @@ def edit_customer(customer_id):
     return render_template('edit_customer.html', customer=customer)
 
 @customers_bp.route('/customers/<int:customer_id>/delete')
+@login_required
 def delete_customer(customer_id):
-    if 'username' not in session:
-        return redirect(url_for('auth.login'))
+    if session.get('role') != 'admin':
+        flash('Only admins can delete customers.', 'danger')
+        return redirect(url_for('customers.customers'))
     conn = get_db()
     c = conn.cursor()
     c.execute('DELETE FROM customers WHERE id=?', (customer_id,))

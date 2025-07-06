@@ -4,6 +4,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 auth_bp = Blueprint('auth', __name__)
 
+# -----------------------
+# Login & Logout
+# -----------------------
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -29,7 +33,10 @@ def logout():
     flash('Logged out successfully!', 'success')
     return redirect(url_for('auth.login'))
 
-# User management routes
+# -----------------------
+# User Management (Admin only)
+# -----------------------
+
 @auth_bp.route('/users')
 def users():
     if session.get('role') != 'admin':
@@ -51,18 +58,21 @@ def add_user():
         username = request.form['username']
         password = request.form['password']
         role = request.form['role']
-        can_add_customer = 1 if request.form.get('can_add_customer') else 0
-        can_edit_customer = 1 if request.form.get('can_edit_customer') else 0
-        can_delete_customer = 1 if request.form.get('can_delete_customer') else 0
-        can_add_bill = 1 if request.form.get('can_add_bill') else 0
-        can_edit_bill = 1 if request.form.get('can_edit_bill') else 0
-        can_delete_bill = 1 if request.form.get('can_delete_bill') else 0
+        can_add_customer = int(bool(request.form.get('can_add_customer')))
+        can_edit_customer = int(bool(request.form.get('can_edit_customer')))
+        can_delete_customer = int(bool(request.form.get('can_delete_customer')))
+        can_add_bill = int(bool(request.form.get('can_add_bill')))
+        can_edit_bill = int(bool(request.form.get('can_edit_bill')))
+        can_delete_bill = int(bool(request.form.get('can_delete_bill')))
         hashed_pw = generate_password_hash(password)
         conn = get_db()
         c = conn.cursor()
         try:
-            c.execute('INSERT INTO users (username, password, role, can_add_customer, can_edit_customer, can_delete_customer, can_add_bill, can_edit_bill, can_delete_bill) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                (username, hashed_pw, role, can_add_customer, can_edit_customer, can_delete_customer, can_add_bill, can_edit_bill, can_delete_bill))
+            c.execute('''
+                INSERT INTO users 
+                (username, password, role, can_add_customer, can_edit_customer, can_delete_customer, can_add_bill, can_edit_bill, can_delete_bill)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (username, hashed_pw, role, can_add_customer, can_edit_customer, can_delete_customer, can_add_bill, can_edit_bill, can_delete_bill))
             conn.commit()
             flash('User added successfully!', 'success')
             return redirect(url_for('auth.users'))
@@ -82,14 +92,16 @@ def edit_user(user_id):
     c = conn.cursor()
     if request.method == 'POST':
         role = request.form['role']
-        can_add_customer = int(request.form.get('can_add_customer', 0))
-        can_edit_customer = int(request.form.get('can_edit_customer', 0))
-        can_delete_customer = int(request.form.get('can_delete_customer', 0))
-        can_add_bill = int(request.form.get('can_add_bill', 0))
-        can_edit_bill = int(request.form.get('can_edit_bill', 0))
-        can_delete_bill = int(request.form.get('can_delete_bill', 0))
-        c.execute('''UPDATE users SET role=?, can_add_customer=?, can_edit_customer=?, can_delete_customer=?, can_add_bill=?, can_edit_bill=?, can_delete_bill=? WHERE id=?''',
-            (role, can_add_customer, can_edit_customer, can_delete_customer, can_add_bill, can_edit_bill, can_delete_bill, user_id))
+        can_add_customer = int(bool(request.form.get('can_add_customer')))
+        can_edit_customer = int(bool(request.form.get('can_edit_customer')))
+        can_delete_customer = int(bool(request.form.get('can_delete_customer')))
+        can_add_bill = int(bool(request.form.get('can_add_bill')))
+        can_edit_bill = int(bool(request.form.get('can_edit_bill')))
+        can_delete_bill = int(bool(request.form.get('can_delete_bill')))
+        c.execute('''
+            UPDATE users SET role=?, can_add_customer=?, can_edit_customer=?, can_delete_customer=?, 
+            can_add_bill=?, can_edit_bill=?, can_delete_bill=? WHERE id=?
+        ''', (role, can_add_customer, can_edit_customer, can_delete_customer, can_add_bill, can_edit_bill, can_delete_bill, user_id))
         conn.commit()
         conn.close()
         flash('User updated successfully!', 'success')
@@ -100,7 +112,10 @@ def edit_user(user_id):
     flash('Please fill out the form to edit the user.', 'info')
     return render_template('edit_user.html', user=user)
 
+# -----------------------
 # Admin override route
+# -----------------------
+
 @auth_bp.route('/admin_auth', methods=['GET', 'POST'])
 def admin_auth():
     if request.method == 'POST':
@@ -114,38 +129,29 @@ def admin_auth():
         admin = c.fetchone()
         conn.close()
         if admin and check_password_hash(admin[0], admin_password):
-            from flask import current_app
-            # If pending edit, perform it now
             if action == 'edit_customer' and 'pending_edit_customer' in session:
-                form_data_dict = session.pop('pending_edit_customer')
-                name = form_data_dict.get('name')
-                phone = form_data_dict.get('phone')
-                email = form_data_dict.get('email')
-                pet_name = form_data_dict.get('pet_name')
-                pet_type = form_data_dict.get('pet_type')
-                notes = form_data_dict.get('notes')
+                form_data = session.pop('pending_edit_customer')
                 conn = get_db()
                 c = conn.cursor()
-                c.execute('''UPDATE customers SET name=?, phone=?, email=?, pet_name=?, pet_type=?, notes=? WHERE id=?''',
-                    (name, phone, email, pet_name, pet_type, notes, target_id))
+                c.execute('''
+                    UPDATE customers SET name=?, phone=?, email=?, pet_name=?, pet_type=?, notes=? WHERE id=?
+                ''', (form_data.get('name'), form_data.get('phone'), form_data.get('email'), form_data.get('pet_name'),
+                      form_data.get('pet_type'), form_data.get('notes'), target_id))
                 conn.commit()
                 conn.close()
                 flash('Customer updated successfully (admin override).', 'success')
                 return redirect(url_for('customers.customers'))
             elif action == 'edit_bill' and 'pending_edit_bill' in session:
-                form_data_dict = session.pop('pending_edit_bill')
-                service = form_data_dict.get('service')
-                amount = form_data_dict.get('amount')
-                notes = form_data_dict.get('notes')
+                form_data = session.pop('pending_edit_bill')
                 conn = get_db()
                 c = conn.cursor()
                 c.execute('UPDATE bills SET service=?, amount=?, notes=? WHERE id=?',
-                    (service, amount, notes, target_id))
+                    (form_data.get('service'), form_data.get('amount'), form_data.get('notes'), target_id))
                 conn.commit()
                 conn.close()
                 flash('Bill updated successfully (admin override).', 'success')
                 return redirect(url_for('bills.bills'))
-            # For delete or GET, just set override flag
+            # Else: just set override flag for delete
             session['admin_override'] = {'action': action, 'target_id': target_id}
             flash('Admin authorization successful. Please retry your action.', 'success')
             if action in ['edit_customer', 'delete_customer']:
@@ -155,8 +161,8 @@ def admin_auth():
         else:
             flash('Invalid admin credentials.', 'danger')
             return render_template('admin_auth.html', action=action, target_id=target_id)
-    # GET: show form
+    # GET request
     action = request.args.get('action')
     target_id = request.args.get('target_id')
-    flash('Please enter admin credentials to proceed with this action.', 'info')
+    flash('Please enter admin credentials to proceed.', 'info')
     return render_template('admin_auth.html', action=action, target_id=target_id)

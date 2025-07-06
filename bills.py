@@ -1,14 +1,16 @@
+from decorators import login_required
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, make_response
 from db import get_db
 from datetime import datetime
 from weasyprint import HTML
 
+
 bills_bp = Blueprint('bills', __name__)
 
 @bills_bp.route('/bills')
+@login_required
 def bills():
-    if 'username' not in session:
-        return redirect(url_for('auth.login'))
+    bills_with_names = []
     conn = get_db()
     c = conn.cursor()
     c.execute('''
@@ -19,7 +21,6 @@ def bills():
     ''')
     all_bills = c.fetchall()
     conn.close()
-    bills_with_names = []
     for bill in all_bills:
         bill = list(bill)
         if bill[1] is None:
@@ -28,9 +29,11 @@ def bills():
     return render_template('bills.html', bills=bills_with_names)
 
 @bills_bp.route('/add_bill', methods=['GET', 'POST'])
+@login_required
 def add_bill():
-    if 'username' not in session:
-        return redirect(url_for('auth.login'))
+    if session.get('role') != 'admin':
+        flash('Only admins can add bills.', 'danger')
+        return redirect(url_for('bills.bills'))
     conn = get_db()
     c = conn.cursor()
     c.execute("SELECT id, name FROM customers")
@@ -51,9 +54,8 @@ def add_bill():
     return render_template('add_bill.html', customers=customers)
 
 @bills_bp.route('/bills/<int:bill_id>/pdf')
+@login_required
 def bill_pdf(bill_id):
-    if 'username' not in session:
-        return redirect(url_for('auth.login'))
     conn = get_db()
     c = conn.cursor()
     c.execute('''
@@ -75,9 +77,11 @@ def bill_pdf(bill_id):
         return "Bill not found", 404
 
 @bills_bp.route('/bills/<int:bill_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_bill(bill_id):
-    if 'username' not in session:
-        return redirect(url_for('auth.login'))
+    if session.get('role') != 'admin':
+        flash('Only admins can edit bills.', 'danger')
+        return redirect(url_for('bills.bills'))
     conn = get_db()
     c = conn.cursor()
     if request.method == 'POST':
@@ -88,17 +92,26 @@ def edit_bill(bill_id):
                   (service, amount, notes, bill_id))
         conn.commit()
         conn.close()
-        flash('Bill updated successfully!')
-        return redirect(url_for('bills.bills'))
+        flash('Bill updated successfully!', 'success')
+        # Instead of redirect, show the edit page with the message
+        bill = {
+            'id': bill_id,
+            'service': service,
+            'amount': amount,
+            'notes': notes
+        }
+        return render_template('edit_bill.html', bill=bill)
     c.execute('SELECT id, service, amount, notes FROM bills WHERE id=?', (bill_id,))
     bill = c.fetchone()
     conn.close()
     return render_template('edit_bill.html', bill=bill)
 
 @bills_bp.route('/bills/<int:bill_id>/delete')
+@login_required
 def delete_bill(bill_id):
-    if 'username' not in session:
-        return redirect(url_for('auth.login'))
+    if session.get('role') != 'admin':
+        flash('Only admins can delete bills.', 'danger')
+        return redirect(url_for('bills.bills'))
     conn = get_db()
     c = conn.cursor()
     c.execute('DELETE FROM bills WHERE id=?', (bill_id,))
