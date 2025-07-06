@@ -10,6 +10,12 @@ import json
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'  # Change this to a strong secret key
 
+def get_db():
+    """Helper function to get a database connection."""
+    conn = sqlite3.connect('database.db')
+    conn.row_factory = sqlite3.Row  # Enable row factory for dict-like access
+    return conn
+
 # Decorator to require login
 def login_required(f):
     @wraps(f)
@@ -43,14 +49,16 @@ def add_customer():
         notes = request.form['notes']
 
         # Connect to the database and insert the new customer
-        conn = sqlite3.connect('database.db')
+        conn = get_db()
         c = conn.cursor()
         c.execute("INSERT INTO customers (name, phone, email, pet_name, pet_type, notes) VALUES (?, ?, ?, ?, ?, ?)",
                   (name, phone, email, pet_name, pet_type, notes))
         conn.commit()
         conn.close()
 
-        return redirect('/')   # After adding, redirect to home
+        flash('Customer added successfully!')
+        return redirect(url_for('customers')) # After adding, redirect to customers list
+        #return redirect('/')   # After adding, redirect to home
 
     # If GET request, show the add customer form
     return render_template('add_customer.html')
@@ -59,7 +67,7 @@ def add_customer():
 @app.route('/customers')
 @login_required
 def customers():
-    conn = sqlite3.connect('database.db')
+    conn = get_db()
     c = conn.cursor()
     c.execute("SELECT * FROM customers")
     all_customers = c.fetchall()  # Get all customers from the database
@@ -73,7 +81,7 @@ def add_bill():
     if session.get('admin_role') != 'admin' and not session.get('can_add_bill', 1):
         flash('You do not have permission to add bills.', 'danger')
         return redirect(url_for('dashboard'))
-    conn = sqlite3.connect('database.db')
+    conn = get_db()
     c = conn.cursor()
     c.execute("SELECT id, name FROM customers")
     customers = c.fetchall()  # Get all customers for the dropdown
@@ -90,6 +98,8 @@ def add_bill():
                   (customer_id, service, amount, date, notes))
         conn.commit()
         conn.close()
+
+        flash('Bill added successfully!')   
         return redirect(url_for('bills'))  # Redirect to bills page
     
     conn.close()
@@ -100,7 +110,7 @@ def add_bill():
 @app.route('/bills')
 @login_required
 def bills():
-    conn = sqlite3.connect('database.db')
+    conn = get_db()
     c = conn.cursor()
     # Use LEFT JOIN to show all bills, even if customer is missing
     c.execute('''
@@ -124,7 +134,7 @@ def bills():
 @app.route('/bills/<int:bill_id>/pdf')
 @login_required
 def bill_pdf(bill_id):
-    conn = sqlite3.connect('database.db')
+    conn = get_db()
     c = conn.cursor()
     # Get the bill and customer info for the given bill_id
     c.execute('''
@@ -162,7 +172,7 @@ def edit_bill(bill_id):
         return redirect(url_for('admin_auth', action='edit_bill', target_id=bill_id))
     if allow_override:
         session.pop('admin_override', None)
-    conn = sqlite3.connect('database.db')
+    conn = get_db()
     c = conn.cursor()
 
     if request.method == 'POST':  # If form is submitted
@@ -175,6 +185,7 @@ def edit_bill(bill_id):
                   (service, amount, notes, bill_id))
         conn.commit()
         conn.close()
+        flash('Bill updated successfully!')
         return redirect(url_for('bills'))
 
     # If GET request, fetch the bill to edit
@@ -193,11 +204,12 @@ def delete_bill(bill_id):
         return redirect(url_for('admin_auth', action='delete_bill', target_id=bill_id))
     if allow_override:
         session.pop('admin_override', None)
-    conn = sqlite3.connect('database.db')
+    conn = get_db() 
     c = conn.cursor()
     c.execute('DELETE FROM bills WHERE id=?', (bill_id,))
     conn.commit()
     conn.close()
+    flash('Bill deleted successfully!')
     return redirect(url_for('bills'))
 
 # Route to edit a customer (supports GET and POST)
@@ -213,7 +225,7 @@ def edit_customer(customer_id):
         return redirect(url_for('admin_auth', action='edit_customer', target_id=customer_id))
     if allow_override:
         session.pop('admin_override', None)
-    conn = sqlite3.connect('database.db')
+    conn = get_db()
     c = conn.cursor()
 
     if request.method == 'POST':  # If form is submitted
@@ -232,6 +244,7 @@ def edit_customer(customer_id):
         ''', (name, phone, email, pet_name, pet_type, notes, customer_id))
         conn.commit()
         conn.close()
+        flash('Customer updated successfully!')
         return redirect(url_for('customers'))
 
     # If GET request, fetch the customer to edit
@@ -251,11 +264,12 @@ def delete_customer(customer_id):
         return redirect(url_for('admin_auth', action='delete_customer', target_id=customer_id))
     if allow_override:
         session.pop('admin_override', None)
-    conn = sqlite3.connect('database.db')
+    conn = get_db()
     c = conn.cursor()
     c.execute('DELETE FROM customers WHERE id=?', (customer_id,))
     conn.commit()
     conn.close()
+    flash('Customer deleted successfully!')
     return redirect(url_for('customers'))
 
 # Login route
@@ -265,7 +279,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
         # Check user credentials from the database
-        conn = sqlite3.connect('database.db')
+        conn = get_db()
         c = conn.cursor()
         c.execute('SELECT id, username, password, role, can_add_customer, can_edit_customer, can_delete_customer, can_add_bill, can_edit_bill, can_delete_bill FROM users WHERE username=?', (username,))
         user = c.fetchone()
@@ -305,7 +319,7 @@ def users():
     if session.get('admin_role') != 'admin':
         flash('Only admin can manage users.', 'danger')
         return redirect(url_for('dashboard'))
-    conn = sqlite3.connect('database.db')
+    conn = get_db()
     c = conn.cursor()
     c.execute('SELECT * FROM users')
     users = c.fetchall()
@@ -330,7 +344,7 @@ def add_user():
         can_edit_bill = 1 if request.form.get('can_edit_bill') else 0
         can_delete_bill = 1 if request.form.get('can_delete_bill') else 0
         hashed_pw = generate_password_hash(password)
-        conn = sqlite3.connect('database.db')
+        conn = get_db()
         c = conn.cursor()
         try:
             c.execute('INSERT INTO users (username, password, role, can_add_customer, can_edit_customer, can_delete_customer, can_add_bill, can_edit_bill, can_delete_bill) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -342,6 +356,7 @@ def add_user():
             flash('Username already exists.', 'danger')
         finally:
             conn.close()
+    flash('Please fill out the form to add a new user.', 'info')
     return render_template('add_user.html')
 
 # Route to edit user roles and permissions (admin only)
@@ -351,7 +366,7 @@ def edit_user(user_id):
     if session.get('admin_role') != 'admin':
         flash('Only admin can edit users.', 'danger')
         return redirect(url_for('dashboard'))
-    conn = sqlite3.connect('database.db')
+    conn = get_db()
     c = conn.cursor()
     if request.method == 'POST':
         role = request.form['role']
@@ -370,6 +385,7 @@ def edit_user(user_id):
     c.execute('SELECT * FROM users WHERE id=?', (user_id,))
     user = c.fetchone()
     conn.close()
+    flash('Please fill out the form to edit the user.', 'info')
     return render_template('edit_user.html', user=user)
 
 # Admin override route
@@ -381,7 +397,7 @@ def admin_auth():
         admin_password = request.form['admin_password']
         action = request.form['action']
         target_id = request.form['target_id']
-        conn = sqlite3.connect('database.db')
+        conn = get_db()
         c = conn.cursor()
         c.execute('SELECT password FROM users WHERE username=? AND role="admin"', (admin_username,))
         admin = c.fetchone()
@@ -397,7 +413,7 @@ def admin_auth():
                 pet_name = form_data_dict.get('pet_name')
                 pet_type = form_data_dict.get('pet_type')
                 notes = form_data_dict.get('notes')
-                conn = sqlite3.connect('database.db')
+                conn = get_db()
                 c = conn.cursor()
                 c.execute('''UPDATE customers SET name=?, phone=?, email=?, pet_name=?, pet_type=?, notes=? WHERE id=?''',
                     (name, phone, email, pet_name, pet_type, notes, target_id))
@@ -410,7 +426,7 @@ def admin_auth():
                 service = form_data_dict.get('service')
                 amount = form_data_dict.get('amount')
                 notes = form_data_dict.get('notes')
-                conn = sqlite3.connect('database.db')
+                conn = get_db()
                 c = conn.cursor()
                 c.execute('UPDATE bills SET service=?, amount=?, notes=? WHERE id=?',
                     (service, amount, notes, target_id))
@@ -431,6 +447,7 @@ def admin_auth():
     # GET: show form
     action = request.args.get('action')
     target_id = request.args.get('target_id')
+    flash('Please enter admin credentials to proceed with this action.', 'info')
     return render_template('admin_auth.html', action=action, target_id=target_id)
 
 # Apply login_required to protected routes
