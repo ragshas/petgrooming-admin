@@ -1,31 +1,35 @@
 {% extends "base.html" %}
 {% block title %}Edit Customer{% endblock %}
 {% block content %}
-<h1>Edit Customer #{{ customer[0] }}</h1>
+{% if customer %}
+  <div class="mb-3">
+    <h5 class="mb-3">Customer #{{ customer[0] }} | Name: <strong>{{ customer[1] }}</strong> | Phone: {{ customer[2] }} | Email: {{ customer[3] }} | Pet: {{ customer[4] }} ({{ customer[5] }}) | Notes: {{ customer[6] }}</h5>
+  </div>
+{% endif %}
 <form method="post">
   <div class="mb-3">
     <label class="form-label">Name:</label>
-    <input class="form-control" type="text" name="name" value="{{ customer[1] }}" required>
+    <input class="form-control" type="text" name="name" value="{{ customer[1] if customer else '' }}" required>
   </div>
   <div class="mb-3">
     <label class="form-label">Phone:</label>
-    <input class="form-control" type="text" name="phone" value="{{ customer[2] }}">
+    <input class="form-control" type="text" name="phone" value="{{ customer[2] if customer else '' }}">
   </div>
   <div class="mb-3">
     <label class="form-label">Email:</label>
-    <input class="form-control" type="email" name="email" value="{{ customer[3] }}">
+    <input class="form-control" type="email" name="email" value="{{ customer[3] if customer else '' }}">
   </div>
   <div class="mb-3">
     <label class="form-label">Pet Name:</label>
-    <input class="form-control" type="text" name="pet_name" value="{{ customer[4] }}">
+    <input class="form-control" type="text" name="pet_name" value="{{ customer[4] if customer else '' }}">
   </div>
   <div class="mb-3">
     <label class="form-label">Pet Type:</label>
-    <input class="form-control" type="text" name="pet_type" value="{{ customer[5] }}">
+    <input class="form-control" type="text" name="pet_type" value="{{ customer[5] if customer else '' }}">
   </div>
   <div class="mb-3">
     <label class="form-label">Notes:</label>
-    <textarea class="form-control" name="notes">{{ customer[6] }}</textarea>
+    <textarea class="form-control" name="notes">{{ customer[6] if customer else '' }}</textarea>
   </div>
   <button type="submit" class="btn btn-primary">Save Changes</button>
 </form>

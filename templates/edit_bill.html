@@ -1,20 +1,35 @@
 {% extends "base.html" %}
 {% block title %}Edit Bill{% endblock %}
 {% block content %}
-<h1>Edit Bill #{{ bill[0] }}</h1>
+{% if bill %}
+  <div class="mb-3">
+    <h5 class="mb-3">Bill #{{ bill[0] }} | Customer: <strong>{{ bill[1] }}</strong> | Service: {{ bill[2] }} | Amount: ${{ bill[3] }} | Date: {{ bill[4] }} | Notes: {{ bill[5] }}</h5>
+  </div>
+{% endif %}
 <form method="post">
   <div class="mb-3">
     <label class="form-label">Service:</label>
-    <input class="form-control" type="text" name="service" value="{{ bill[1] }}" required>
+    <input class="form-control" type="text" name="service" value="{{ bill[2] if bill else '' }}" {% if saved %}disabled{% endif %} required>
   </div>
   <div class="mb-3">
     <label class="form-label">Amount:</label>
-    <input class="form-control" type="number" step="0.01" name="amount" value="{{ bill[2] }}" required>
+    <input class="form-control" type="number" step="0.01" name="amount" value="{{ bill[3] if bill else '' }}" {% if saved %}disabled{% endif %} required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Date:</label>
+    {% if session['role'] == 'admin' %}
+      <input class="form-control" type="text" name="date" value="{{ bill[4] if bill else '' }}" {% if saved %}disabled{% endif %}>
+    {% else %}
+      <input class="form-control" type="text" name="date" value="{{ bill[4] if bill else '' }}" readonly>
+    {% endif %}
   </div>
   <div class="mb-3">
     <label class="form-label">Notes:</label>
-    <textarea class="form-control" name="notes">{{ bill[3] }}</textarea>
+    <textarea class="form-control" name="notes" {% if saved %}disabled{% endif %}>{{ bill[5] if bill else '' }}</textarea>
   </div>
-  <button type="submit" class="btn btn-primary">Save Changes</button>
+  <button type="submit" class="btn btn-primary" {% if saved %}disabled{% endif %}>Save Changes</button>
 </form>
+{% if saved %}
+  <div class="alert alert-info mt-3">Bill updated. Please return to the bills list to edit another bill.</div>
+{% endif %}
 {% endblock %}

@@ -36,10 +36,20 @@ def add_bill():
         return redirect(url_for('bills.bills'))
     conn = get_db()
     c = conn.cursor()
-    c.execute("SELECT id, name FROM customers")
+    c.execute("SELECT id, name, phone, email, pet_name, pet_type, notes FROM customers")
     customers = c.fetchall()
+    customer_details = {}
+    for cust in customers:
+        customer_details[cust[0]] = {
+            'name': cust[1],
+            'phone': cust[2],
+            'email': cust[3],
+            'pet_name': cust[4],
+            'pet_type': cust[5],
+            'notes': cust[6]
+        }
     if request.method == 'POST':
-        customer_id = request.form['customer_id']
+        customer_id = int(request.form['customer_id'])
         service = request.form['service']
         amount = request.form['amount']
         date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -49,9 +59,9 @@ def add_bill():
         conn.commit()
         conn.close()
         flash('Bill added successfully!')
-        return redirect(url_for('bills.bills'))
+        return render_template('add_bill.html', customers=customers, customer_details=customer_details, current_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     conn.close()
-    return render_template('add_bill.html', customers=customers)
+    return render_template('add_bill.html', customers=customers, customer_details=customer_details, current_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
 @bills_bp.route('/bills/<int:bill_id>/pdf')
 @login_required
@@ -79,29 +89,31 @@ def bill_pdf(bill_id):
 @bills_bp.route('/bills/<int:bill_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_bill(bill_id):
-    if session.get('role') != 'admin':
-        flash('Only admins can edit bills.', 'danger')
-        return redirect(url_for('bills.bills'))
+    is_admin = session.get('role') == 'admin'
     conn = get_db()
     c = conn.cursor()
     if request.method == 'POST':
         service = request.form['service']
         amount = request.form['amount']
         notes = request.form['notes']
-        c.execute('UPDATE bills SET service=?, amount=?, notes=? WHERE id=?',
-                  (service, amount, notes, bill_id))
+        if is_admin:
+            date = request.form['date']
+            c.execute('UPDATE bills SET service=?, amount=?, notes=?, date=? WHERE id=?',
+                      (service, amount, notes, date, bill_id))
+        else:
+            c.execute('UPDATE bills SET service=?, amount=?, notes=? WHERE id=?',
+                      (service, amount, notes, bill_id))
         conn.commit()
         conn.close()
         flash('Bill updated successfully!', 'success')
-        # Instead of redirect, show the edit page with the message
-        bill = {
-            'id': bill_id,
-            'service': service,
-            'amount': amount,
-            'notes': notes
-        }
-        return render_template('edit_bill.html', bill=bill)
-    c.execute('SELECT id, service, amount, notes FROM bills WHERE id=?', (bill_id,))
+        # After saving, show empty fields and disable further edits
+        return render_template('edit_bill.html', bill=None, saved=True)
+    c.execute('''
+        SELECT bills.id, customers.name, bills.service, bills.amount, bills.date, bills.notes
+        FROM bills
+        LEFT JOIN customers ON bills.customer_id = customers.id
+        WHERE bills.id=?
+    ''', (bill_id,))
     bill = c.fetchone()
     conn.close()
     return render_template('edit_bill.html', bill=bill)

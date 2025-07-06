@@ -1,17 +1,67 @@
-{% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
+{% extends 'base.html' %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-8">
-    <h1 class="mb-4">Admin Dashboard</h1>
-    <div class="list-group">
-      <a href="/add_customer" class="list-group-item list-group-item-action">Add Customer</a>
-      <a href="/customers" class="list-group-item list-group-item-action">View Customers</a>
-      <a href="/add_bill" class="list-group-item list-group-item-action">Add Bill</a>
-      <a href="/bills" class="list-group-item list-group-item-action">View Bills</a>
-      <a href="/users" class="list-group-item list-group-item-action">Manage Users</a>
-      <a href="/logout" class="list-group-item list-group-item-action text-danger">Logout</a>
+<div class="container mt-4">
+  <h2>Dashboard</h2>
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card text-white bg-primary mb-3">
+        <div class="card-header">Total Customers</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ total_customers }}</h5>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-white bg-success mb-3">
+        <div class="card-header">Total Bills</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ total_bills }}</h5>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-white bg-info mb-3">
+        <div class="card-header">Revenue (Last 30 Days)</div>
+        <div class="card-body">
+          <h5 class="card-title">Rs {{ total_revenue_30d }}</h5>
+        </div>
+      </div>
+      <div class="card mt-4">
+        <div class="card-header">Revenue Trend (Last 6 Months)</div>
+        <div class="card-body">
+          <canvas id="revenueChart"></canvas>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// NOTE: The following Jinja/Flask template variables may cause squiggly lines in some editors,
+// but are correct for Flask rendering and will produce valid JavaScript arrays at runtime.
+var chartLabels = JSON.parse('{{ chart_labels|default([])|tojson|safe }}');
+var chartValues = JSON.parse('{{ chart_values|default([])|tojson|safe }}');
+if (chartLabels.length && chartValues.length) {
+  var ctx = document.getElementById('revenueChart').getContext('2d');
+  var revenueChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+          labels: chartLabels,
+          datasets: [{
+              label: 'Revenue',
+              data: chartValues,
+              borderColor: 'rgba(75, 192, 192, 1)',
+              fill: false,
+              tension: 0.1
+          }]
+      },
+      options: {
+          scales: {
+              y: { beginAtZero: true }
+          }
+      }
+  });
+}
+</script>
+
 {% endblock %}

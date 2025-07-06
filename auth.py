@@ -22,7 +22,7 @@ def login():
             session['username'] = user['username']
             session['role'] = user['role']
             flash('Logged in successfully!', 'success')
-            return redirect(url_for('customers.customers'))
+            return redirect(url_for('dashboard.dashboard'))
         else:
             flash('Invalid username or password', 'danger')
     return render_template('login.html')
