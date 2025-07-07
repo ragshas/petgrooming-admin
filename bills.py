@@ -131,3 +131,20 @@ def delete_bill(bill_id):
     conn.close()
     flash('Bill deleted successfully!')
     return redirect(url_for('bills.bills'))
+
+@bills_bp.route('/bills/<int:id>')
+@login_required
+def bill_detail(id):
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('''
+        SELECT b.id, c.name, b.service, b.amount, b.date, b.notes
+        FROM bills b
+        LEFT JOIN customers c ON b.customer_id = c.id
+        WHERE b.id = ?
+    ''', (id,))
+    bill = c.fetchone()
+    conn.close()
+    if bill is None:
+        abort(404)
+    return render_template('bills/detail.html', bill=bill)

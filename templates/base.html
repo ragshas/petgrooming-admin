@@ -1,83 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Pet Grooming Admin{% endblock %}</title>
-  
+
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
 </head>
+
 <body>
 
-{% if request.endpoint == 'auth.login' %}
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-  <div class="container-fluid">
-    <a class="navbar-brand mx-auto" href="#">PAWFECT PETS</a>
-  </div>
-</nav>
-{% else %}
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="/dashboard">PAWFECT PETS</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
-      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav">
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('dashboard.dashboard') }}">Dashboard</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/add_customer">Add Customer</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/customers">View Customers</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/add_bill">Add Bill</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/bills">View Bills</a>
-        </li>
-      </ul>
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="User" width="28" height="28" class="rounded-circle me-1">
-            {{ session['username'] if session['username'] else 'User' }}
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-            <li><a class="dropdown-item text-danger" href="/logout">Logout</a></li>
-            <li><a class="dropdown-item" href="/logout">Switch User</a></li>
-          </ul>
-        </li>
-      </ul>
+  {% if request.endpoint == 'auth.login' %}
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand mx-auto" href="#">PAWFECT PETS</a>
     </div>
-  </div>
-</nav>
-{% endif %}
+  </nav>
+  {% else %}
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/dashboard">PAWFECT PETS</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('dashboard.dashboard') }}">Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/add_customer">Add Customer</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/customers">View Customers</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/add_bill">Add Bill</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/bills">View Bills</a>
+          </li>
+          <!-- example inside <ul class="nav flex-column"> -->
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('appointments.list_appointments') }}">
+              <i class="bi bi-calendar"></i> Appointments
+            </a>
+          </li>
 
-{# Flashed messages block (inserted after navbar, before content) #}
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    <div class="container mt-3">
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-      {% endfor %}
+        </ul>
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button"
+              data-bs-toggle="dropdown" aria-expanded="false">
+              <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="User" width="28" height="28"
+                class="rounded-circle me-1">
+              {{ session['username'] if session['username'] else 'User' }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+              <li><a class="dropdown-item text-danger" href="/logout">Logout</a></li>
+              <li><a class="dropdown-item" href="/logout">Switch User</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
     </div>
+  </nav>
   {% endif %}
-{% endwith %}
 
-<div class="container mt-4">
-  {% block content %}{% endblock %}
-</div>
+  {# Flashed messages block (inserted after navbar, before content) #}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="container mt-3">
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
 
-<!-- Bootstrap JS Bundle -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <div class="container mt-4">
+    {% block content %}{% endblock %}
+  </div>
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

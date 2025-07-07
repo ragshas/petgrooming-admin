@@ -93,3 +93,18 @@ def delete_customer(customer_id):
     conn.close()
     flash('Customer deleted successfully!', 'success')
     return redirect(url_for('customers.customers'))
+
+@customers_bp.route('/customers/<int:id>')
+@login_required
+def customer_detail(id):
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('SELECT id, name, phone, email, pet_name, pet_type, notes, date_added FROM customers WHERE id = ?', (id,))
+    customer = c.fetchone()
+    conn.close()
+    if customer:
+        return render_template('customers/detail.html', customer=customer)
+    else:
+        flash('Customer not found.', 'danger')
+        return redirect(url_for('customers.customers'))  # adjust if your list route name is different
+

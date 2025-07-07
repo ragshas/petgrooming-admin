@@ -51,6 +51,26 @@ if not c.fetchone():
     admin_pw = generate_password_hash('admin123')
     c.execute('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ('admin', admin_pw, 'admin'))
 
+c.execute('''
+CREATE TABLE IF NOT EXISTS appointments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER NOT NULL,
+    pet_name TEXT,
+    service TEXT NOT NULL,
+    date TEXT NOT NULL,  -- format: YYYY-MM-DD
+    time TEXT NOT NULL,  -- format: HH:MM
+    notes TEXT,
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+)
+''')
+
+c.execute('''INSERT INTO appointments (customer_id, pet_name, service, date, time, notes)
+VALUES
+ (1, 'Buddy', 'Haircut', '2025-07-07', '10:00', 'Regular trim'),
+ (2, 'Luna', 'Bath', '2025-07-08', '14:00', ''),
+ (3, 'Max', 'Nail Clipping', '2025-07-09', '16:00', 'First visit');
+''')
+
 conn.commit()
 conn.close()
 

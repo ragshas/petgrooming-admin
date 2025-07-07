@@ -115,6 +115,18 @@ def dashboard():
     ''')
     popular_services = c.fetchall()  # list of (service, count)
 
+    # Get next 5 upcoming appointments
+    c.execute('''
+        SELECT a.id, c.name, a.pet_name, a.service, a.date, a.time
+        FROM appointments a
+        JOIN customers c ON a.customer_id = c.id
+        WHERE date >= DATE('now')
+        ORDER BY date, time
+        LIMIT 5
+    ''')
+    upcoming_appointments = c.fetchall()
+
+
     conn.close()
 
     # Prepare data for chart.js
@@ -137,6 +149,7 @@ def dashboard():
     popular_services=popular_services,
     revenue_this_month=revenue_this_month,
     revenue_last_month=revenue_last_month,
-    revenue_change_pct=revenue_change_pct
+    revenue_change_pct=revenue_change_pct,
+    upcoming_appointments=upcoming_appointments
 )
 

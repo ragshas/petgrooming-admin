@@ -78,6 +78,66 @@
     </div>
   </div>
 </div>
+  <!-- Revenue and Popular Services Charts -->
+<!--<div class="row">
+  <div class="col-md-4">
+    <div class="card mb-4 {{ 'bg-success text-white' if revenue_change_pct and revenue_change_pct > 0 else 'bg-danger text-white' }}">
+      <div class="card-header">Revenue Change (This Month vs Last Month)</div>
+      <div class="card-body">
+        <h5 class="card-title">
+          {% if revenue_change_pct is not none %}
+            {% if revenue_change_pct > 0 %}
+              ↑ {{ '%.1f' | format(revenue_change_pct) }}%
+            {% elif revenue_change_pct < 0 %}
+              ↓ {{ '%.1f' | format(revenue_change_pct) }}%
+            {% else %}
+              No change
+            {% endif %}
+          {% else %}
+            No data
+          {% endif %}
+        </h5>
+        <p class="card-text">This month: Rs {{ revenue_this_month or 0 }}</p>
+        <p class="card-text">Last month: Rs {{ revenue_last_month or 0 }}</p>
+      </div>
+    </div>
+  </div>
+</div>-->
+<!-- Upcoming Appointments -->
+<!-- Upcoming Appointments -->
+<div class="card mb-4">
+  <div class="card-header">Upcoming Appointments</div>
+  <div class="card-body p-0">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Customer</th>
+          <th>Pet Name</th>
+          <th>Service</th>
+          <th>Date</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for appt in upcoming_appointments %}
+        <tr>
+          <td>{{ appt[0] }}</td>
+          <td>{{ appt[1] }}</td>
+          <td>{{ appt[2] }}</td>
+          <td>{{ appt[3] }}</td>
+          <td>{{ appt[4] }}</td>
+          <td>{{ appt[5] }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center">No upcoming appointments</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
   <!-- Charts side by side -->
   <div class="row">
     <div class="col-md-6 mb-4">
@@ -119,7 +179,7 @@
         <tbody>
           {% for bill in recent_bills %}
           <tr>
-            <td>{{ bill[0] }}</td>
+            <td><a href="{{ url_for('bills.bill_detail', id=bill[0]) }}">{{ bill[0] }}</a></td>
             <td>{{ bill[1] }}</td>
             <td>{{ bill[2] }}</td>
             <td>{{ bill[3] }}</td>
@@ -148,7 +208,7 @@
         <tbody>
           {% for customer in recent_customers %}
           <tr>
-            <td>{{ customer[0] }}</td>
+            <td><a href="{{ url_for('customers.customer_detail', id=customer[0]) }}">{{ customer[1] }}</a></td>
             <td>{{ customer[1] }}</td>
             <td>{{ customer[2] }}</td>
             <td>{{ customer[3] }}</td>
