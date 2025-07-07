@@ -1,5 +1,5 @@
 from decorators import login_required
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, make_response
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, make_response,abort
 from db import get_db
 from datetime import datetime
 from weasyprint import HTML
@@ -7,26 +7,56 @@ from weasyprint import HTML
 
 bills_bp = Blueprint('bills', __name__)
 
+# bills.py
+
 @bills_bp.route('/bills')
 @login_required
 def bills():
-    bills_with_names = []
     conn = get_db()
     c = conn.cursor()
-    c.execute('''
+
+    # Get filter params from request
+    customer = request.args.get('customer', '').strip()
+    service = request.args.get('service', '').strip()
+    start_date = request.args.get('start_date', '').strip()
+    end_date = request.args.get('end_date', '').strip()
+
+    # Build query dynamically
+    query = '''
         SELECT bills.id, customers.name, bills.service, bills.amount, bills.date, bills.notes
         FROM bills
         LEFT JOIN customers ON bills.customer_id = customers.id
-        ORDER BY bills.date DESC
-    ''')
-    all_bills = c.fetchall()
+        WHERE 1=1
+    '''
+    params = []
+
+    if customer:
+        query += ' AND customers.name LIKE ?'
+        params.append(f'%{customer}%')
+    if service:
+        query += ' AND bills.service LIKE ?'
+        params.append(f'%{service}%')
+    if start_date:
+        query += ' AND date(bills.date) >= date(?)'
+        params.append(start_date)
+    if end_date:
+        query += ' AND date(bills.date) <= date(?)'
+        params.append(end_date)
+
+    query += ' ORDER BY bills.date DESC'
+
+    c.execute(query, params)
+    bills_with_names = c.fetchall()
     conn.close()
-    for bill in all_bills:
-        bill = list(bill)
-        if bill[1] is None:
-            bill[1] = 'Unknown'
-        bills_with_names.append(tuple(bill))
-    return render_template('bills.html', bills=bills_with_names)
+
+    return render_template('bills.html',
+        bills=bills_with_names,
+        customer=customer,
+        service=service,
+        start_date=start_date,
+        end_date=end_date
+    )
+
 
 @bills_bp.route('/add_bill', methods=['GET', 'POST'])
 @login_required
@@ -148,3 +178,32 @@ def bill_detail(id):
     if bill is None:
         abort(404)
     return render_template('bills/detail.html', bill=bill)
+
+@bills_bp.route('/bills/export/csv')
+@login_required
+def export_bills_csv():
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('''
+        SELECT bills.id, customers.name, bills.service, bills.amount, bills.date, bills.notes
+        FROM bills
+        LEFT JOIN customers ON bills.customer_id = customers.id
+        ORDER BY bills.date DESC
+    ''')
+    bills = c.fetchall()
+    conn.close()
+
+    import csv
+    from io import StringIO
+    si = StringIO()
+    cw = csv.writer(si)
+    cw.writerow(['ID', 'Customer', 'Service', 'Amount', 'Date', 'Notes'])  # header
+    cw.writerows(bills)
+
+    output = si.getvalue()
+    from flask import Response
+    return Response(
+        output,
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=bills.csv'}
+    )

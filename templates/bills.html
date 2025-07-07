@@ -4,6 +4,28 @@
 
 {% block content %}
 <h1>All Bills</h1>
+<!-- templates/bills.html -->
+<form class="row mb-3" method="get">
+  <div class="col-md-2">
+    <input type="text" name="customer" value="{{ customer }}" class="form-control" placeholder="Customer name">
+  </div>
+  <div class="col-md-2">
+    <input type="text" name="service" value="{{ service }}" class="form-control" placeholder="Service">
+  </div>
+  <div class="col-md-2">
+    <input type="date" name="start_date" value="{{ start_date }}" class="form-control" placeholder="Start date">
+  </div>
+  <div class="col-md-2">
+    <input type="date" name="end_date" value="{{ end_date }}" class="form-control" placeholder="End date">
+  </div>
+  <div class="col-md-2">
+    <button type="submit" class="btn btn-primary w-100">Filter</button>
+  </div>
+  <div class="col-md-2">
+    <a href="{{ url_for('bills.bills') }}" class="btn btn-secondary w-100">Reset</a>
+  </div>
+</form>
+
 <table class="table table-striped table-bordered">
   <thead class="table-primary">
     <tr>
@@ -31,9 +53,13 @@
       </td>
       <td>
         <a href="/bills/{{ bill[0] }}/edit" class="btn btn-sm btn-primary">Edit</a>
-        <a href="/bills/{{ bill[0] }}/delete" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this bill?');">Delete</a>
+        <a href="/bills/{{ bill[0] }}/delete" class="btn btn-sm btn-danger"
+          onclick="return confirm('Are you sure you want to delete this bill?');">Delete</a>
         <a href="/bills/{{ bill[0] }}/pdf" class="btn btn-sm btn-secondary">PDF</a>
-</td>
+        <a class="btn btn-sm btn-outline-primary mb-2" href="{{ url_for('bills.export_bills_csv') }}">Export Bills
+          CSV</a>
+
+      </td>
 
     </tr>
     {% else %}

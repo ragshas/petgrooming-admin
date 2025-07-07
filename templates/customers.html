@@ -30,6 +30,8 @@
       <td>{{ customer[6] }}</td>
       <td> <a href="/customers/{{ customer[0] }}/edit" class="btn btn-sm btn-primary">Edit</a>
   <a href="/customers/{{ customer[0] }}/delete" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this customer?');">Delete</a>
+  <a class="btn btn-sm btn-outline-primary mb-2" href="{{ url_for('customers.export_customers_csv') }}">Export Customers CSV</a>
+
 </td>
     </tr>
     {% else %}

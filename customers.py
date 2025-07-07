@@ -6,15 +6,32 @@ from datetime import datetime
 
 customers_bp = Blueprint('customers', __name__)
 
+# customers.py
+
 @customers_bp.route('/customers')
 @login_required
-def customers():
+def list_customers():
+    search = request.args.get('search', '').strip()
     conn = get_db()
     c = conn.cursor()
-    c.execute('SELECT * FROM customers')
+    if search:
+        c.execute('''
+            SELECT id, name, phone, pet_name, date_added
+            FROM customers
+            WHERE name LIKE ? OR phone LIKE ?
+            ORDER BY date_added DESC
+        ''', (f'%{search}%', f'%{search}%'))
+    else:
+        c.execute('''
+            SELECT id, name, phone, pet_name, date_added
+            FROM customers
+            ORDER BY date_added DESC
+        ''')
     customers = c.fetchall()
     conn.close()
-    return render_template('customers.html', customers=customers)
+    return render_template('customers/list.html', customers=customers, search=search)
+
+
 
 @customers_bp.route('/add_customer', methods=['GET', 'POST'])
 @login_required
@@ -107,4 +124,33 @@ def customer_detail(id):
     else:
         flash('Customer not found.', 'danger')
         return redirect(url_for('customers.customers'))  # adjust if your list route name is different
+    
+@customers_bp.route('/customers/export/csv')
+@login_required
+def export_customers_csv():
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('''
+        SELECT id, name, phone, email, pet_name, pet_type, date_added, notes
+        FROM customers
+        ORDER BY date_added DESC
+    ''')
+    customers = c.fetchall()
+    conn.close()
+
+    import csv
+    from io import StringIO
+    si = StringIO()
+    cw = csv.writer(si)
+    cw.writerow(['ID', 'Name', 'Phone', 'Email', 'Pet Name', 'Pet Type', 'Date Added', 'Notes'])  # header
+    cw.writerows(customers)
+
+    output = si.getvalue()
+    from flask import Response
+    return Response(
+        output,
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=customers.csv'}
+    )
+
 
