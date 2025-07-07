@@ -1,7 +1,10 @@
 {% extends 'base.html' %}
+
 {% block content %}
 <div class="container mt-4">
   <h2>Dashboard</h2>
+
+  <!-- Stats cards -->
   <div class="row">
     <div class="col-md-4">
       <div class="card text-white bg-primary mb-3">
@@ -26,42 +29,187 @@
           <h5 class="card-title">Rs {{ total_revenue_30d }}</h5>
         </div>
       </div>
-      <div class="card mt-4">
-        <div class="card-header">Revenue Trend (Last 6 Months)</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card text-white bg-warning mb-3">
+        <div class="card-header">Total Revenue (All Time)</div>
         <div class="card-body">
-          <canvas id="revenueChart"></canvas>
+          <h5 class="card-title">Rs {{ total_revenue_all_time }}</h5>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-white bg-secondary mb-3">
+        <div class="card-header">Bills Today</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ bills_today_count }} bills, Rs {{ bills_today_amount }}</h5>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-white bg-dark mb-3">
+        <div class="card-header">New Customers This Month</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ new_customers_this_month }}</h5>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Charts side by side -->
+  <div class="row">
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header">Revenue Trend (Last 6 Months)</div>
+        <div class="card-body">
+          <div style="height: 250px;">
+            <canvas id="revenueChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header">Most Popular Services (Last 6 Months)</div>
+        <div class="card-body">
+          <div style="height: 250px;">
+            <canvas id="servicesChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Bills -->
+  <div class="card mb-4">
+    <div class="card-header">Recent Bills</div>
+    <div class="card-body p-0">
+      <table class="table mb-0">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Customer</th>
+            <th>Service</th>
+            <th>Amount</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for bill in recent_bills %}
+          <tr>
+            <td>{{ bill[0] }}</td>
+            <td>{{ bill[1] }}</td>
+            <td>{{ bill[2] }}</td>
+            <td>{{ bill[3] }}</td>
+            <td>{{ bill[4] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Customers -->
+  <div class="card mb-4">
+    <div class="card-header">Recent Customers</div>
+    <div class="card-body p-0">
+      <table class="table mb-0">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Pet Name</th>
+            <th>Date Added</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for customer in recent_customers %}
+          <tr>
+            <td>{{ customer[0] }}</td>
+            <td>{{ customer[1] }}</td>
+            <td>{{ customer[2] }}</td>
+            <td>{{ customer[3] }}</td>
+            <td>{{ customer[4] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Top Customers -->
+  <div class="card mb-4">
+    <div class="card-header">Top Customers by Total Spent</div>
+    <div class="card-body p-0">
+      <table class="table mb-0">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Total Spent</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for customer in top_customers %}
+          <tr>
+            <td>{{ customer[0] }}</td>
+            <td>Rs {{ '%.2f' | format(customer[1]) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
+
+<!-- Chart.js scripts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// NOTE: The following Jinja/Flask template variables may cause squiggly lines in some editors,
-// but are correct for Flask rendering and will produce valid JavaScript arrays at runtime.
-var chartLabels = JSON.parse('{{ chart_labels|default([])|tojson|safe }}');
-var chartValues = JSON.parse('{{ chart_values|default([])|tojson|safe }}');
-if (chartLabels.length && chartValues.length) {
-  var ctx = document.getElementById('revenueChart').getContext('2d');
-  var revenueChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-          labels: chartLabels,
-          datasets: [{
-              label: 'Revenue',
-              data: chartValues,
-              borderColor: 'rgba(75, 192, 192, 1)',
-              fill: false,
-              tension: 0.1
-          }]
-      },
-      options: {
-          scales: {
-              y: { beginAtZero: true }
-          }
-      }
+  const ctx = document.getElementById('revenueChart').getContext('2d');
+  const revenueChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: {{ chart_labels| tojson }},
+  datasets: [{
+    label: 'Revenue',
+    data: {{ chart_values| tojson }},
+    borderColor: 'rgba(75, 192, 192, 1)',
+    fill: false,
+    tension: 0.3
+      }]
+    },
+  options: {
+    scales: {
+      y: { beginAtZero: true }
+    }
+  }
   });
-}
-</script>
 
+  const serviceLabels = {{ popular_services | map(attribute = 0) | list | tojson }};
+  const serviceCounts = {{ popular_services | map(attribute = 1) | list | tojson }};
+
+  const ctxServices = document.getElementById('servicesChart').getContext('2d');
+  const servicesChart = new Chart(ctxServices, {
+    type: 'pie',
+    data: {
+      labels: serviceLabels,
+      datasets: [{
+        data: serviceCounts,
+        backgroundColor: [
+          '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' }
+      }
+    }
+  });
+</script>
 {% endblock %}

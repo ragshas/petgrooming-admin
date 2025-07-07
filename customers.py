@@ -2,7 +2,7 @@ from decorators import login_required
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 import sqlite3
 from db import get_db   # reuse the helper
-
+from datetime import datetime
 
 customers_bp = Blueprint('customers', __name__)
 
@@ -26,14 +26,15 @@ def add_customer():
         pet_name = request.form['pet_name']
         pet_type = request.form['pet_type']
         notes = request.form['notes']
+        date_added = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         conn = get_db()
         c = conn.cursor()
-        c.execute('INSERT INTO customers (name, phone, email, pet_name, pet_type, notes) VALUES (?, ?, ?, ?, ?, ?)',
-                  (name, phone, email, pet_name, pet_type, notes))
+        c.execute('INSERT INTO customers (name, phone, email, pet_name, pet_type, notes, date_added) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                  (name, phone, email, pet_name, pet_type, notes, date_added))
         conn.commit()
         conn.close()
-        flash('Customer added successfully!')
+        flash('Customer added successfully!', 'success')
         return redirect(url_for('customers.customers'))  # note blueprint name
 
     return render_template('add_customer.html')
@@ -90,5 +91,5 @@ def delete_customer(customer_id):
     c.execute('DELETE FROM customers WHERE id=?', (customer_id,))
     conn.commit()
     conn.close()
-    flash('Customer deleted successfully!')
+    flash('Customer deleted successfully!', 'success')
     return redirect(url_for('customers.customers'))

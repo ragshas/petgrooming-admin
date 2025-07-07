@@ -58,7 +58,7 @@ def add_bill():
                   (customer_id, service, amount, date, notes))
         conn.commit()
         conn.close()
-        flash('Bill added successfully!')
+        flash('Bill added successfully!', 'success')
         return render_template('add_bill.html', customers=customers, customer_details=customer_details, current_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     conn.close()
     return render_template('add_bill.html', customers=customers, customer_details=customer_details, current_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
