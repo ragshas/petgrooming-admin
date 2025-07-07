@@ -74,6 +74,26 @@ def dashboard():
     c.execute('SELECT SUM(amount) FROM bills')
     total_revenue_all_time = c.fetchone()[0] or 0
 
+    # Revenue this month (from 1st of current month)
+    c.execute('''
+        SELECT SUM(amount) FROM bills
+        WHERE strftime('%Y-%m', date) = strftime('%Y-%m', 'now')
+    ''')
+    revenue_this_month = c.fetchone()[0] or 0
+
+    # Revenue previous month
+    c.execute('''
+        SELECT SUM(amount) FROM bills
+        WHERE strftime('%Y-%m', date) = strftime('%Y-%m', 'now', '-1 month')
+    ''')
+    revenue_last_month = c.fetchone()[0] or 0
+
+    # Calculate percentage change (avoid division by zero)
+    if revenue_last_month > 0:
+        revenue_change_pct = ((revenue_this_month - revenue_last_month) / revenue_last_month) * 100
+    else:
+        revenue_change_pct = None  # means "no data last month"
+
     # Bills added today
     c.execute("SELECT COUNT(*), SUM(amount) FROM bills WHERE DATE(date) = DATE('now')")
     bills_today = c.fetchone()
@@ -114,6 +134,9 @@ def dashboard():
     recent_bills=recent_bills,
     recent_customers=recent_customers,
     top_customers=top_customers,
-    popular_services=popular_services
+    popular_services=popular_services,
+    revenue_this_month=revenue_this_month,
+    revenue_last_month=revenue_last_month,
+    revenue_change_pct=revenue_change_pct
 )
 

@@ -58,7 +58,26 @@
       </div>
     </div>
   </div>
-
+  <!-- Total revenue (this month)-->
+<div class="col-md-4">
+  <div class="card text-white bg-warning mb-3">
+    <div class="card-header">Total Revenue (This Month)</div>
+    <div class="card-body">
+      <h5 class="card-title">Rs {{ revenue_this_month }}</h5>
+      {% if revenue_change_pct is not none %}
+        <small>
+          {% if revenue_change_pct >= 0 %}
+            <span class="text-success">↑ {{ '%.1f' | format(revenue_change_pct) }}% vs last month</span>
+          {% else %}
+            <span class="text-danger">↓ {{ '%.1f' | format(-revenue_change_pct) }}% vs last month</span>
+          {% endif %}
+        </small>
+      {% else %}
+        <small class="text-muted">No data for last month</small>
+      {% endif %}
+    </div>
+  </div>
+</div>
   <!-- Charts side by side -->
   <div class="row">
     <div class="col-md-6 mb-4">
@@ -165,34 +184,37 @@
   </div>
 </div>
 
-<!-- Chart.js scripts -->
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+  // Revenue Trend Line Chart
+  const chartLabels = {{ chart_labels | tojson }};
+  const chartValues = {{ chart_values | tojson }};
   const ctx = document.getElementById('revenueChart').getContext('2d');
-  const revenueChart = new Chart(ctx, {
+  new Chart(ctx, {
     type: 'line',
     data: {
-      labels: {{ chart_labels| tojson }},
-  datasets: [{
-    label: 'Revenue',
-    data: {{ chart_values| tojson }},
-    borderColor: 'rgba(75, 192, 192, 1)',
-    fill: false,
-    tension: 0.3
+      labels: chartLabels,
+      datasets: [{
+        label: 'Revenue',
+        data: chartValues,
+        borderColor: 'rgba(75, 192, 192, 1)',
+        fill: false,
+        tension: 0.3
       }]
     },
-  options: {
-    scales: {
-      y: { beginAtZero: true }
+    options: {
+      scales: {
+        y: { beginAtZero: true }
+      }
     }
-  }
   });
 
-  const serviceLabels = {{ popular_services | map(attribute = 0) | list | tojson }};
-  const serviceCounts = {{ popular_services | map(attribute = 1) | list | tojson }};
-
+  // Most Popular Services Pie Chart
+  const serviceLabels = {{ popular_services | map(attribute=0) | list | tojson }};
+  const serviceCounts = {{ popular_services | map(attribute=1) | list | tojson }};
   const ctxServices = document.getElementById('servicesChart').getContext('2d');
-  const servicesChart = new Chart(ctxServices, {
+  new Chart(ctxServices, {
     type: 'pie',
     data: {
       labels: serviceLabels,
@@ -212,4 +234,5 @@
     }
   });
 </script>
+
 {% endblock %}
