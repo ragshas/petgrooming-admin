@@ -143,6 +143,8 @@ def dashboard():
     labels = [row[0] for row in revenue_per_month]
     values = [row[1] or 0 for row in revenue_per_month]
 
+    # Prepare data for top services summary card
+    top_services = [{'service': row[0], 'count': row[1]} for row in popular_services]
     return render_template('dashboard.html',
     total_customers=total_customers,
     total_bills=total_bills,
@@ -161,6 +163,7 @@ def dashboard():
     revenue_this_month=revenue_this_month,
     revenue_last_month=revenue_last_month,
     revenue_change_pct=revenue_change_pct,
-    upcoming_appointments=upcoming_appointments
+    upcoming_appointments=upcoming_appointments,
+    top_services=top_services
 )
 

@@ -5,22 +5,29 @@
   <h2>Customers</h2>
 
   <!-- Batch actions and search -->
-  <form class="row mb-3 align-items-center" method="get">
-    <div class="col-md-4 mb-2 mb-md-0">
-      <div class="input-group">
-        <span class="input-group-text"><i class="bi bi-search"></i></span>
-        <input type="text" name="search" value="{{ search }}" class="form-control" placeholder="Search name or phone">
-      </div>
-    </div>
-    <div class="col-md-2 mb-2 mb-md-0">
-      <button type="submit" class="btn btn-primary w-100">Search</button>
-    </div>
-    <div class="col-md-2 mb-2 mb-md-0">
-      <a href="{{ url_for('customers.list_customers') }}" class="btn btn-secondary w-100">Reset</a>
-    </div>
-    <div class="col-md-4 text-end">
+  <form class="row mb-3 align-items-center justify-content-end" method="get">
+    <div class="col-auto">
       <a href="{{ url_for('customers.export_customers_csv') }}" class="btn btn-outline-success btn-sm me-2">Export Customers CSV</a>
       <a href="{{ url_for('customers.export_pets_csv') }}" class="btn btn-outline-success btn-sm">Export Pets CSV</a>
+    </div>
+  </form>
+
+  <!-- Filtering UI -->
+  <form class="row mb-3" method="get">
+    <div class="col-md-2">
+      <input type="text" name="name" value="{{ name }}" class="form-control" placeholder="Customer name">
+    </div>
+    <div class="col-md-2">
+      <input type="text" name="phone" value="{{ phone }}" class="form-control" placeholder="Phone">
+    </div>
+    <div class="col-md-2">
+      <input type="text" name="pet_name" value="{{ pet_name }}" class="form-control" placeholder="Pet name">
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-primary w-100">Filter</button>
+    </div>
+    <div class="col-md-2">
+      <a href="{{ url_for('customers.list_customers') }}" class="btn btn-secondary w-100">Reset</a>
     </div>
   </form>
 

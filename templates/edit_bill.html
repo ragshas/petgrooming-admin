@@ -28,6 +28,7 @@
     <textarea class="form-control" name="notes" {% if saved %}disabled{% endif %}>{{ bill[5] if bill else '' }}</textarea>
   </div>
   <button type="submit" class="btn btn-primary" {% if saved %}disabled{% endif %}>Save Changes</button>
+  <a href="{{ url_for('bills.bills') }}" class="btn btn-secondary ms-2">Cancel</a>
 </form>
 {% if saved %}
   <div class="alert alert-info mt-3">Bill updated. Please return to the bills list to edit another bill.</div>

@@ -5,53 +5,53 @@
   <!-- Summary Bar with toggle -->
   <div class="d-flex justify-content-between align-items-center mb-2">
     <h2 class="mb-0">Dashboard</h2>
-    <a href="{{ url_for('appointments.add_appointment') }}" class="btn btn-success"><i class="bi bi-plus-circle"></i> Add Appointment</a>
+    <a href="{{ url_for('appointments.add_appointment') }}" class="btn btn-success btn-sm"><i class="bi bi-plus-circle"></i> Add Appointment</a>
   </div>
-  <div id="summaryBar" class="row mb-4 g-3 text-center">
+  <div id="summaryBar" class="row mb-3 g-2 text-center">
     <div class="col-md-2 col-6">
-      <div class="bg-light rounded shadow-sm py-3">
-        <div class="fs-4 fw-bold text-primary"><i class="bi bi-people"></i> {{ total_customers }}</div>
+      <div class="bg-light rounded shadow-sm py-2">
+        <div class="fs-5 fw-bold text-primary"><i class="bi bi-people"></i> {{ total_customers }}</div>
         <div class="small text-muted">Customers</div>
       </div>
     </div>
     <div class="col-md-2 col-6">
-      <div class="bg-light rounded shadow-sm py-3">
-        <div class="fs-4 fw-bold text-success"><i class="bi bi-receipt"></i> {{ total_bills }}</div>
+      <div class="bg-light rounded shadow-sm py-2">
+        <div class="fs-5 fw-bold text-success"><i class="bi bi-receipt"></i> {{ total_bills }}</div>
         <div class="small text-muted">Bills</div>
       </div>
     </div>
     <div class="col-md-2 col-6">
-      <div class="bg-light rounded shadow-sm py-3">
-        <div class="fs-4 fw-bold text-info"><i class="bi bi-cash"></i> Rs {{ total_revenue_30d }}</div>
+      <div class="bg-light rounded shadow-sm py-2">
+        <div class="fs-5 fw-bold text-info"><i class="bi bi-cash"></i> Rs {{ total_revenue_30d }}</div>
         <div class="small text-muted">Revenue (30d)</div>
       </div>
     </div>
     <div class="col-md-2 col-6">
-      <div class="bg-light rounded shadow-sm py-3">
-        <div class="fs-4 fw-bold text-warning"><i class="bi bi-cash-coin"></i> Rs {{ total_revenue_all_time }}</div>
+      <div class="bg-light rounded shadow-sm py-2">
+        <div class="fs-5 fw-bold text-warning"><i class="bi bi-cash-coin"></i> Rs {{ total_revenue_all_time }}</div>
         <div class="small text-muted">Revenue (All Time)</div>
       </div>
     </div>
     <div class="col-md-2 col-6">
-      <div class="bg-light rounded shadow-sm py-3">
-        <div class="fs-4 fw-bold text-secondary"><i class="bi bi-calendar-event"></i> {{ bills_today_count }}</div>
+      <div class="bg-light rounded shadow-sm py-2">
+        <div class="fs-5 fw-bold text-secondary"><i class="bi bi-calendar-event"></i> {{ bills_today_count }}</div>
         <div class="small text-muted">Bills Today</div>
       </div>
     </div>
     <div class="col-md-2 col-6">
-      <div class="bg-light rounded shadow-sm py-3">
-        <div class="fs-4 fw-bold text-dark"><i class="bi bi-person-plus"></i> {{ new_customers_this_month }}</div>
+      <div class="bg-light rounded shadow-sm py-2">
+        <div class="fs-5 fw-bold text-dark"><i class="bi bi-person-plus"></i> {{ new_customers_this_month }}</div>
         <div class="small text-muted">New Customers</div>
       </div>
     </div>
     <div class="col-md-2 col-6">
-      <div class="bg-light rounded shadow-sm py-3">
-        <div class="fs-4 fw-bold text-success"><i class="bi bi-arrow-repeat"></i> {{ returning_customers }}</div>
+      <div class="bg-light rounded shadow-sm py-2">
+        <div class="fs-5 fw-bold text-success"><i class="bi bi-arrow-repeat"></i> {{ returning_customers }}</div>
         <div class="small text-muted">Returning Customers</div>
       </div>
     </div>
   </div>
-  <div class="mb-3 text-end">
+  <div class="mb-2 text-end">
     <button class="btn btn-outline-secondary btn-sm" id="toggleSummaryBar" type="button">
       <i class="bi bi-eye-slash"></i> Hide Summary
     </button>
@@ -115,10 +115,10 @@
 </div>-->
 <!-- Upcoming Appointments -->
 <!-- Upcoming Appointments -->
-<div class="card mb-4">
+<div class="card mb-3">
   <div class="card-header">Upcoming Appointments</div>
   <div class="card-body p-0">
-    <table class="table mb-0">
+    <table class="table table-sm mb-0">
       <thead>
         <tr>
           <th>ID</th>
@@ -205,7 +205,7 @@
   <div class="card mb-4">
     <div class="card-header">Recent Customers</div>
     <div class="card-body p-0">
-      <table class="table mb-0">
+      <table class="table table-sm mb-0">
         <thead>
           <tr>
             <th>ID</th>
@@ -218,7 +218,7 @@
         <tbody>
           {% for customer in recent_customers %}
           <tr>
-            <td><a href="{{ url_for('customers.customer_detail', id=customer[0]) }}">{{ customer[1] }}</a></td>
+            <td><a href="{{ url_for('customers.customer_detail', id=customer[0]) }}">{{ customer[0] }}</a></td>
             <td>{{ customer[1] }}</td>
             <td>{{ customer[2] }}</td>
             <td>{{ customer[3] }}</td>
@@ -234,7 +234,7 @@
   <div class="card mb-4">
     <div class="card-header">Top Customers by Total Spent</div>
     <div class="card-body p-0">
-      <table class="table mb-0">
+      <table class="table table-sm mb-0">
         <thead>
           <tr>
             <th>Name</th>
@@ -250,6 +250,27 @@
           {% endfor %}
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Top Services -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">Top Services (Last 6 Months)</div>
+        <div class="card-body">
+          <ul class="list-group">
+            {% for service in top_services %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              {{ service.service }}
+              <span class="badge bg-primary rounded-pill">{{ service.count }}</span>
+            </li>
+            {% else %}
+            <li class="list-group-item text-muted">No data available</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
 </div>

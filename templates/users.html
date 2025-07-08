@@ -16,7 +16,7 @@
       <tbody>
         {% for user in users %}
         <tr>
-          <td>{{ user[1] }}</td>
+          <td><a href="/user/{{ user[0] }}" class="text-decoration-underline">{{ user[1] }}</a></td>
           <td>{{ user[3] }}</td>
           <td>
             Add Customer: {{ 'Yes' if user[4] else 'No' }},
@@ -28,6 +28,9 @@
           </td>
           <td>
             <a href="/edit_user/{{ user[0] }}" class="btn btn-sm btn-primary">Edit</a>
+            {% if session['role'] == 'admin' and session['username'] != user[1] %}
+              <a href="/delete_user/{{ user[0] }}" class="btn btn-sm btn-danger ms-1">Delete</a>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}

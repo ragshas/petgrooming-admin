@@ -53,17 +53,18 @@ def users():
 def add_user():
     if session.get('role') != 'admin':
         flash('Only admin can add users.', 'danger')
-        return redirect(url_for('customers.list_customers'))
+        return redirect(url_for('dashboard.dashboard'))
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         role = request.form['role']
-        can_add_customer = int(bool(request.form.get('can_add_customer')))
-        can_edit_customer = int(bool(request.form.get('can_edit_customer')))
-        can_delete_customer = int(bool(request.form.get('can_delete_customer')))
-        can_add_bill = int(bool(request.form.get('can_add_bill')))
-        can_edit_bill = int(bool(request.form.get('can_edit_bill')))
-        can_delete_bill = int(bool(request.form.get('can_delete_bill')))
+        # Use .get with default '0' to ensure unchecked radios/checkboxes are 0
+        can_add_customer = int(request.form.get('can_add_customer', 0))
+        can_edit_customer = int(request.form.get('can_edit_customer', 0))
+        can_delete_customer = int(request.form.get('can_delete_customer', 0))
+        can_add_bill = int(request.form.get('can_add_bill', 0))
+        can_edit_bill = int(request.form.get('can_edit_bill', 0))
+        can_delete_bill = int(request.form.get('can_delete_bill', 0))
         hashed_pw = generate_password_hash(password)
         conn = get_db()
         c = conn.cursor()
@@ -92,12 +93,12 @@ def edit_user(user_id):
     c = conn.cursor()
     if request.method == 'POST':
         role = request.form['role']
-        can_add_customer = int(bool(request.form.get('can_add_customer')))
-        can_edit_customer = int(bool(request.form.get('can_edit_customer')))
-        can_delete_customer = int(bool(request.form.get('can_delete_customer')))
-        can_add_bill = int(bool(request.form.get('can_add_bill')))
-        can_edit_bill = int(bool(request.form.get('can_edit_bill')))
-        can_delete_bill = int(bool(request.form.get('can_delete_bill')))
+        can_add_customer = int(request.form.get('can_add_customer', 0))
+        can_edit_customer = int(request.form.get('can_edit_customer', 0))
+        can_delete_customer = int(request.form.get('can_delete_customer', 0))
+        can_add_bill = int(request.form.get('can_add_bill', 0))
+        can_edit_bill = int(request.form.get('can_edit_bill', 0))
+        can_delete_bill = int(request.form.get('can_delete_bill', 0))
         c.execute('''
             UPDATE users SET role=?, can_add_customer=?, can_edit_customer=?, can_delete_customer=?, 
             can_add_bill=?, can_edit_bill=?, can_delete_bill=? WHERE id=?
@@ -111,6 +112,42 @@ def edit_user(user_id):
     conn.close()
     flash('Please fill out the form to edit the user.', 'info')
     return render_template('edit_user.html', user=user)
+
+@auth_bp.route('/delete_user/<int:user_id>', methods=['GET', 'POST'])
+def delete_user(user_id):
+    if request.method == 'POST':
+        admin_username = request.form['admin_username']
+        admin_password = request.form['admin_password']
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('SELECT password FROM users WHERE username=? AND role="admin"', (admin_username,))
+        admin = c.fetchone()
+        if admin and check_password_hash(admin[0], admin_password):
+            c.execute('DELETE FROM users WHERE id=?', (user_id,))
+            conn.commit()
+            conn.close()
+            flash('User deleted successfully!', 'success')
+            return redirect(url_for('auth.users'))
+        else:
+            flash('Invalid admin credentials.', 'danger')
+            conn.close()
+            return redirect(url_for('auth.users'))
+    return render_template('delete_user.html', user_id=user_id)
+
+@auth_bp.route('/user/<int:user_id>')
+def user_detail(user_id):
+    if session.get('role') != 'admin':
+        flash('Only admin can view user details.', 'danger')
+        return redirect(url_for('auth.users'))
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('SELECT * FROM users WHERE id=?', (user_id,))
+    user = c.fetchone()
+    conn.close()
+    if not user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('auth.users'))
+    return render_template('user_detail.html', user=user)
 
 # -----------------------
 # Admin override route
@@ -166,3 +203,58 @@ def admin_auth():
     target_id = request.args.get('target_id')
     flash('Please enter admin credentials to proceed.', 'info')
     return render_template('admin_auth.html', action=action, target_id=target_id)
+
+# -----------------------
+# Password Reset
+# -----------------------
+
+@auth_bp.route('/reset_password', methods=['GET', 'POST'])
+def reset_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('SELECT * FROM users WHERE email=?', (email,))
+        user = c.fetchone()
+        conn.close()
+        if user:
+            # Logic to send password reset email
+            flash('Password reset link sent to your email.', 'info')
+        else:
+            flash('Email not found.', 'danger')
+    return render_template('reset_password.html')
+
+@auth_bp.route('/change_password', methods=['GET', 'POST'])
+def change_password():
+    if 'username' not in session:
+        flash('You must be logged in to change your password.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    if request.method == 'POST':
+        current_password = request.form['current_password']
+        new_password = request.form['new_password']
+        confirm_password = request.form['confirm_password']
+
+        if new_password != confirm_password:
+            flash('New password and confirmation do not match.', 'danger')
+            return redirect(url_for('auth.change_password'))
+
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('SELECT password FROM users WHERE username=?', (session['username'],))
+        user = c.fetchone()
+
+        if not user or not check_password_hash(user['password'], current_password):
+            flash('Current password is incorrect.', 'danger')
+            conn.close()
+            return redirect(url_for('auth.change_password'))
+
+        hashed_pw = generate_password_hash(new_password)
+        c.execute('UPDATE users SET password=? WHERE username=?', (hashed_pw, session['username']))
+        conn.commit()
+        conn.close()
+
+        flash('Password changed successfully!', 'success')
+        return redirect(url_for('dashboard.dashboard'))
+
+    return render_template('change_password.html')

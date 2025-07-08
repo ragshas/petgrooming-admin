@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}User Details{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <h2 class="mb-4">User Details</h2>
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">{{ user[1] }}</h5>
+        <p class="card-text"><strong>Role:</strong> {{ user[3] }}</p>
+        <p class="card-text"><strong>Email:</strong> {{ user[10] if user|length > 10 else 'N/A' }}</p>
+        <p class="card-text"><strong>Phone:</strong> {{ user[11] if user|length > 11 else 'N/A' }}</p>
+        <p class="card-text"><strong>Address:</strong> {{ user[12] if user|length > 12 else 'N/A' }}</p>
+        <hr>
+        <h6>Permissions</h6>
+        <ul>
+          <li>Add Customer: {{ 'Yes' if user[4] else 'No' }}</li>
+          <li>Edit Customer: {{ 'Yes' if user[5] else 'No' }}</li>
+          <li>Delete Customer: {{ 'Yes' if user[6] else 'No' }}</li>
+          <li>Add Bill: {{ 'Yes' if user[7] else 'No' }}</li>
+          <li>Edit Bill: {{ 'Yes' if user[8] else 'No' }}</li>
+          <li>Delete Bill: {{ 'Yes' if user[9] else 'No' }}</li>
+        </ul>
+        <a href="{{ url_for('auth.users') }}" class="btn btn-secondary mt-2">Back to User Management</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -3,57 +3,80 @@
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-6">
-    <h2 class="mb-4">Add New User</h2>
+    <h2 class="mb-3">Add New User</h2>
     <form method="post">
-      <div class="mb-3">
-        <label class="form-label">Username:</label>
-        <input class="form-control" type="text" name="username" required>
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Username:</label>
+          <input class="form-control form-control-sm" type="text" name="username" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Password:</label>
+          <input class="form-control form-control-sm" type="password" name="password" required>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Email:</label>
+          <input class="form-control form-control-sm" type="email" name="email" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Phone Number:</label>
+          <input class="form-control form-control-sm" type="text" name="phone" required>
+        </div>
       </div>
       <div class="mb-3">
-        <label class="form-label">Password:</label>
-        <input class="form-control" type="password" name="password" required>
+        <label class="form-label">Address:</label>
+        <textarea class="form-control form-control-sm" name="address" rows="2" required></textarea>
       </div>
       <div class="mb-3">
         <label class="form-label">Role:</label>
-        <select class="form-select" name="role">
+        <select class="form-select form-select-sm" name="role">
           <option value="user">User</option>
           <option value="admin">Admin</option>
         </select>
       </div>
-      <div class="mb-3">
-        <label class="form-label">Permissions:</label><br>
-        <div class="mb-2">
+      <hr>
+      <h5 class="mb-3">Permissions</h5>
+      <div class="row mb-3">
+        <div class="col-md-6">
           <label>Add Customer:</label>
           <input type="radio" name="can_add_customer" value="1" checked> Enable
           <input type="radio" name="can_add_customer" value="0"> Disable
         </div>
-        <div class="mb-2">
+        <div class="col-md-6">
           <label>Edit Customer:</label>
           <input type="radio" name="can_edit_customer" value="1" checked> Enable
           <input type="radio" name="can_edit_customer" value="0"> Disable
         </div>
-        <div class="mb-2">
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6">
           <label>Delete Customer:</label>
           <input type="radio" name="can_delete_customer" value="1" checked> Enable
           <input type="radio" name="can_delete_customer" value="0"> Disable
         </div>
-        <div class="mb-2">
+        <div class="col-md-6">
           <label>Add Bill:</label>
           <input type="radio" name="can_add_bill" value="1" checked> Enable
           <input type="radio" name="can_add_bill" value="0"> Disable
         </div>
-        <div class="mb-2">
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6">
           <label>Edit Bill:</label>
           <input type="radio" name="can_edit_bill" value="1" checked> Enable
           <input type="radio" name="can_edit_bill" value="0"> Disable
         </div>
-        <div class="mb-2">
+        <div class="col-md-6">
           <label>Delete Bill:</label>
           <input type="radio" name="can_delete_bill" value="1" checked> Enable
           <input type="radio" name="can_delete_bill" value="0"> Disable
         </div>
       </div>
-      <button type="submit" class="btn btn-primary">Add User</button>
+      <small class="text-muted">Please ensure all fields are filled out accurately.</small>
+      <button type="submit" class="btn btn-primary btn-sm">Add User</button>
+      <a href="{{ url_for('auth.users') }}" class="btn btn-secondary ms-2">Cancel</a>
     </form>
   </div>
 </div>

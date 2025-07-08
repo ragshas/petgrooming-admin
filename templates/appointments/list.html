@@ -13,6 +13,30 @@
     {% endif %}
   {% endwith %}
 
+  <form class="row mb-3" method="get">
+    <div class="col-md-2">
+      <input type="text" name="customer" value="{{ customer }}" class="form-control" placeholder="Customer name">
+    </div>
+    <div class="col-md-2">
+      <input type="text" name="pet_name" value="{{ pet_name }}" class="form-control" placeholder="Pet name">
+    </div>
+    <div class="col-md-2">
+      <input type="text" name="service" value="{{ service }}" class="form-control" placeholder="Service">
+    </div>
+    <div class="col-md-2">
+      <input type="date" name="start_date" value="{{ start_date }}" class="form-control" placeholder="Start date">
+    </div>
+    <div class="col-md-2">
+      <input type="date" name="end_date" value="{{ end_date }}" class="form-control" placeholder="End date">
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-primary w-100">Filter</button>
+    </div>
+    <div class="col-md-2">
+      <a href="{{ url_for('appointments.list_appointments') }}" class="btn btn-secondary w-100">Reset</a>
+    </div>
+  </form>
+
   <table class="table table-striped">
     <thead>
       <tr>

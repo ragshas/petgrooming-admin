@@ -44,44 +44,32 @@ def bills():
         query += ' AND customers.name LIKE ?'
         count_query += ' AND customers.name LIKE ?'
         params.append(f'%{customer}%')
-        count_params.append(f'%{customer}%')
     if service:
         query += ' AND bills.service LIKE ?'
         count_query += ' AND bills.service LIKE ?'
         params.append(f'%{service}%')
-        count_params.append(f'%{service}%')
     if start_date:
-        query += ' AND date(bills.date) >= date(?)'
-        count_query += ' AND date(bills.date) >= date(?)'
+        query += ' AND bills.date >= ?'
+        count_query += ' AND bills.date >= ?'
         params.append(start_date)
-        count_params.append(start_date)
     if end_date:
-        query += ' AND date(bills.date) <= date(?)'
-        count_query += ' AND date(bills.date) <= date(?)'
+        query += ' AND bills.date <= ?'
+        count_query += ' AND bills.date <= ?'
         params.append(end_date)
-        count_params.append(end_date)
 
     query += ' ORDER BY bills.date DESC LIMIT ? OFFSET ?'
+    count_query += ' ORDER BY bills.date DESC'
     params += [per_page, offset]
 
-    c.execute(count_query, count_params)
+    c.execute(count_query, params[:-2])
     total_bills = c.fetchone()[0]
 
     c.execute(query, params)
-    bills_with_names = c.fetchall()
+    bills = c.fetchall()
     conn.close()
 
     total_pages = (total_bills + per_page - 1) // per_page
-
-    return render_template('bills.html',
-        bills=bills_with_names,
-        customer=customer,
-        service=service,
-        start_date=start_date,
-        end_date=end_date,
-        page=page,
-        total_pages=total_pages
-    )
+    return render_template('bills.html', bills=bills, page=page, total_pages=total_pages, customer=customer, service=service, start_date=start_date, end_date=end_date)
 
 
 @bills_bp.route('/add_bill', methods=['GET', 'POST'])

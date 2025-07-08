@@ -11,10 +11,32 @@
       </div>
       <div class="mb-3">
         <label class="form-label">Password:</label>
-        <input class="form-control" type="password" name="password" required>
+        <div class="input-group">
+          <input class="form-control" type="password" name="password" required>
+          <span class="input-group-text" id="togglePassword" style="cursor: pointer;">
+            <i class="bi bi-eye"></i>
+          </span>
+        </div>
       </div>
       <button type="submit" class="btn btn-primary w-100">Login</button>
     </form>
+    <div class="mb-3">
+        <a href="{{ url_for('auth.reset_password') }}" class="btn btn-link">Forgot Password?</a>
+      </div>
   </div>
 </div>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const passwordField = document.querySelector('input[name="password"]');
+    const togglePassword = document.getElementById('togglePassword');
+    const toggleIcon = togglePassword.querySelector('i');
+
+    togglePassword.addEventListener('click', function() {
+      const isPassword = passwordField.type === 'password';
+      passwordField.type = isPassword ? 'text' : 'password';
+      toggleIcon.classList.toggle('bi-eye');
+      toggleIcon.classList.toggle('bi-eye-slash');
+    });
+  });
+</script>
 {% endblock %}

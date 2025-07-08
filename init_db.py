@@ -38,18 +38,13 @@ CREATE TABLE IF NOT EXISTS users (
     password TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'user',
     can_add_customer INTEGER DEFAULT 1,
-    can_edit_customer INTEGER DEFAULT 1,
-    can_delete_customer INTEGER DEFAULT 1,
+    can_edit_customer INTEGER DEFAULT 0,
+    can_delete_customer INTEGER DEFAULT 0,
     can_add_bill INTEGER DEFAULT 1,
-    can_edit_bill INTEGER DEFAULT 1,
-    can_delete_bill INTEGER DEFAULT 1
+    can_edit_bill INTEGER DEFAULT 0,
+    can_delete_bill INTEGER DEFAULT 0
 )
 ''')
-# Insert default admin if not exists
-c.execute('SELECT * FROM users WHERE username=?', ('admin',))
-if not c.fetchone():
-    admin_pw = generate_password_hash('admin123')
-    c.execute('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ('admin', admin_pw, 'admin'))
 
 c.execute('''
 CREATE TABLE IF NOT EXISTS appointments (
