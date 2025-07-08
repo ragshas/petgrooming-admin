@@ -25,7 +25,9 @@
     <a href="{{ url_for('bills.bills') }}" class="btn btn-secondary w-100">Reset</a>
   </div>
 </form>
-
+<div class="mb-3">
+  <a class="btn btn-outline-success" href="{{ url_for('bills.export_bills_csv') }}">Export Bills CSV</a>
+</div>
 <table class="table table-striped table-bordered">
   <thead class="table-primary">
     <tr>
@@ -52,8 +54,6 @@
         <a href="/bills/{{ bill[0] }}/edit" class="btn btn-sm btn-primary">Edit</a>
         <a href="/bills/{{ bill[0] }}/delete" class="btn btn-sm btn-danger"
           onclick="return confirm('Are you sure you want to delete this bill?');">Delete</a>
-        <a class="btn btn-sm btn-outline-primary mb-2" href="{{ url_for('bills.export_bills_csv') }}">Export Bills
-          CSV</a>
       </td>
     </tr>
     {% else %}

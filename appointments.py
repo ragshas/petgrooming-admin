@@ -8,22 +8,32 @@ appointments_bp = Blueprint('appointments', __name__)
 @appointments_bp.route('/appointments')
 @login_required
 def list_appointments():
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    offset = (page - 1) * per_page
     conn = get_db()
     c = conn.cursor()
+    # Get total count for pagination
+    c.execute('''SELECT COUNT(*) FROM appointments''')
+    total_appointments = c.fetchone()[0]
+    total_pages = (total_appointments + per_page - 1) // per_page
+    # Fetch paginated appointments
     c.execute('''
-        SELECT a.id, c.name, p.pet_name, p.pet_type, a.service, a.date, a.time, a.notes
+        SELECT a.id, c.name, p.pet_name, p.pet_type, p.size, a.service, a.date, a.time, a.duration, a.notes
         FROM appointments a
         JOIN pets p ON a.pet_id = p.id
         JOIN customers c ON p.customer_id = c.id
         ORDER BY a.date, a.time
-    ''')
+        LIMIT ? OFFSET ?
+    ''', (per_page, offset))
     appointments = c.fetchall()
     conn.close()
-    return render_template('appointments/list.html', appointments=appointments)
+    return render_template('appointments/list.html', appointments=appointments, page=page, total_pages=total_pages)
 
 @appointments_bp.route('/appointments/add', methods=['GET', 'POST'])
 @login_required
 def add_appointment():
+    from datetime import date as dtdate
     conn = get_db()
     c = conn.cursor()
     c.execute('SELECT id, name FROM customers')
@@ -32,10 +42,13 @@ def add_appointment():
     pets = []
     if request.method == 'POST':
         customer_type = request.form.get('customer_type')
+        confirm = request.form.get('confirm')
+        today_str = dtdate.today().strftime('%Y-%m-%d')
+        # Only use fields for the selected flow
         if customer_type == 'new':
-            name = request.form['new_name'].strip()
-            phone = request.form['new_phone'].strip()
-            email = request.form['new_email'].strip()
+            name = request.form.get('new_name', '').strip()
+            phone = request.form.get('new_phone', '').strip()
+            email = request.form.get('new_email', '').strip()
             c.execute('SELECT id FROM customers WHERE phone = ?', (phone,))
             row = c.fetchone()
             if row:
@@ -43,58 +56,61 @@ def add_appointment():
             else:
                 c.execute('INSERT INTO customers (name, phone, email, date_added) VALUES (?, ?, ?, ?)',
 
-                          (name, phone, email, datetime.now().strftime('%Y-%m-%d')))
+                          (name, phone, email, dtdate.today().strftime('%Y-%m-%d')))
                 customer_id = c.lastrowid
-            # Add pet for new customer
             new_pet_name = request.form.get('new_pet_name', '').strip()
             new_pet_type = request.form.get('new_pet_type', '').strip()
+            new_pet_size = request.form.get('new_pet_size', 'medium')
             pet_notes = request.form.get('new_pet_notes', '').strip()
-            c.execute('INSERT INTO pets (customer_id, pet_name, pet_type, notes) VALUES (?, ?, ?, ?)',
-                      (customer_id, new_pet_name, new_pet_type, pet_notes))
+            c.execute('INSERT INTO pets (customer_id, pet_name, pet_type, size, notes) VALUES (?, ?, ?, ?, ?)',
+                      (customer_id, new_pet_name, new_pet_type, new_pet_size, pet_notes))
             pet_id = c.lastrowid
-            service = request.form['service'].strip()
-            date = request.form['date']
-            time = request.form['time']
-            notes = request.form['notes'].strip()
-            c.execute('''
-                INSERT INTO appointments (customer_id, pet_id, service, date, time, notes)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (customer_id, pet_id, service, date, time, notes))
-            conn.commit()
-            conn.close()
-            flash('Appointment saved successfully!', 'success')
-            return redirect(url_for('appointments.list_appointments'))
+            service = request.form.get('service', '').strip()
+            date = request.form.get('date')
+            time = request.form.get('time')
+            duration = int(request.form.get('duration', 30))
+            notes = request.form.get('notes', '').strip()
         else:
             customer_id = request.form.get('customer_id')
             if customer_id:
                 c.execute('SELECT id, pet_name FROM pets WHERE customer_id = ?', (customer_id,))
                 pets = c.fetchall()
             pet_id = request.form.get('pet_id')
-            new_pet_name = request.form.get('new_pet_name', '').strip()
-            new_pet_type = request.form.get('new_pet_type', '').strip()
-            pet_notes = request.form.get('pet_notes', '').strip()
-            if not pet_id and new_pet_name:
-                c.execute('INSERT INTO pets (customer_id, pet_name, pet_type, notes) VALUES (?, ?, ?, ?)',
-                          (customer_id, new_pet_name, new_pet_type, pet_notes))
+            if not pet_id:
+                new_pet_name = request.form.get('existing_new_pet_name', '').strip()
+                new_pet_type = request.form.get('existing_new_pet_type', '').strip()
+                new_pet_size = request.form.get('existing_new_pet_size', 'medium')
+                pet_notes = request.form.get('existing_new_pet_notes', '').strip()
+                c.execute('INSERT INTO pets (customer_id, pet_name, pet_type, size, notes) VALUES (?, ?, ?, ?, ?)',
+                          (customer_id, new_pet_name, new_pet_type, new_pet_size, pet_notes))
                 pet_id = c.lastrowid
-            elif pet_id:
-                pet_id = int(pet_id)
             else:
-                flash('Please select or add a pet.', 'danger')
-                conn.close()
-                return render_template('appointments/add.html', customers=customers, pets=pets, selected_customer_id=customer_id)
-            service = request.form['service'].strip()
-            date = request.form['date']
-            time = request.form['time']
-            notes = request.form['notes'].strip()
-            c.execute('''
-                INSERT INTO appointments (customer_id, pet_id, service, date, time, notes)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (customer_id, pet_id, service, date, time, notes))
-            conn.commit()
+                pet_id = int(pet_id)
+            service = request.form.get('service', '').strip()
+            date = request.form.get('date')
+            time = request.form.get('time')
+            duration = int(request.form.get('duration', 30))
+            notes = request.form.get('notes', '').strip()
+        # Prevent past dates
+        if date < today_str:
             conn.close()
-            flash('Appointment saved successfully!', 'success')
-            return redirect(url_for('appointments.list_appointments'))
+            flash('Appointment date cannot be in the past.', 'danger')
+            return render_template('appointments/add.html', customers=customers, pets=pets, selected_customer_id=customer_id, form=request.form)
+        # Check for double-booking
+        c.execute('SELECT id FROM appointments WHERE date=? AND time=? AND pet_id=?', (date, time, pet_id))
+        conflict = c.fetchone()
+        if conflict and not confirm:
+            conn.close()
+            flash('Warning: This time slot is already booked for this pet. If you want to proceed, click Save again.', 'warning')
+            return render_template('appointments/add.html', customers=customers, pets=pets, selected_customer_id=customer_id, form=request.form)
+        c.execute('''
+            INSERT INTO appointments (customer_id, pet_id, service, date, time, duration, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (customer_id, pet_id, service, date, time, duration, notes))
+        conn.commit()
+        conn.close()
+        flash('Appointment saved successfully!', 'success')
+        return redirect(url_for('appointments.list_appointments'))
     else:
         if selected_customer_id:
             c.execute('SELECT id, pet_name FROM pets WHERE customer_id = ?', (selected_customer_id,))
@@ -109,47 +125,79 @@ def edit_appointment(id):
     c = conn.cursor()
     c.execute('SELECT id, name FROM customers')
     customers = c.fetchall()
-    c.execute('SELECT * FROM appointments WHERE id = ?', (id,))
-    appointment = c.fetchone()
-    if not appointment:
+    # Fetch appointment with join to match list_appointments indices
+    c.execute('''
+        SELECT a.id, c.name, p.pet_name, p.pet_type, p.size, a.service, a.date, a.time, a.duration, a.notes, a.customer_id, a.pet_id
+        FROM appointments a
+        JOIN pets p ON a.pet_id = p.id
+        JOIN customers c ON p.customer_id = c.id
+        WHERE a.id = ?
+    ''', (id,))
+    appointment_row = c.fetchone()
+    if not appointment_row:
         flash('Appointment not found.', 'danger')
         return redirect(url_for('appointments.list_appointments'))
-    # appointment: (id, customer_id, pet_id, service, date, time, notes)
-    customer_id = appointment[1]
-    pet_id = appointment[2]
-    c.execute('SELECT id, pet_name FROM pets WHERE customer_id = ?', (customer_id,))
-    pets = c.fetchall()
-    c.execute('SELECT * FROM pets WHERE id = ?', (pet_id,))
-    current_pet = c.fetchone()
+    # Map to dict for template clarity
+    appointment = {
+        'id': appointment_row[0],
+        'customer_name': appointment_row[1],
+        'pet_name': appointment_row[2],
+        'pet_type': appointment_row[3],
+        'pet_size': appointment_row[4],
+        'service': appointment_row[5],
+        'date': appointment_row[6],
+        'time': appointment_row[7],
+        'duration': appointment_row[8],
+        'notes': appointment_row[9],
+        'customer_id': appointment_row[10],
+        'pet_id': appointment_row[11],
+    }
+    customer_id = appointment['customer_id']
+    pet_id = appointment['pet_id']
+    # Fetch all pet details for this customer
+    c.execute('SELECT id, pet_name, pet_type, size, notes FROM pets WHERE customer_id = ?', (customer_id,))
+    pets = [tuple(p) for p in c.fetchall()]
+    # Find the current pet details
+    current_pet = None
+    for pet in pets:
+        if pet[0] == pet_id:
+            current_pet = pet
+            break
     if request.method == 'POST':
         customer_id = request.form['customer_id']
         pet_option = request.form.get('pet_option', 'existing')
         service = request.form['service']
         date = request.form['date']
         time = request.form['time']
+        duration = int(request.form.get('duration', appointment['duration'] if 'duration' in appointment else 30))
         notes = request.form['notes']
+        # Pet size handling
         if pet_option == 'existing':
             pet_id = request.form.get('pet_id')
             if not pet_id:
                 flash('Please select a pet.', 'danger')
                 conn.close()
                 return render_template('appointments/edit.html', appointment=appointment, customers=customers, pets=pets, current_pet=current_pet)
+            pet_size = request.form.get('pet_size', current_pet[4] if current_pet and len(current_pet) > 4 else 'medium')
+            # Update pet size if changed
+            c.execute('UPDATE pets SET size=? WHERE id=?', (pet_size, pet_id))
         else:
             new_pet_name = request.form.get('new_pet_name', '').strip()
             new_pet_type = request.form.get('new_pet_type', '').strip()
+            new_pet_size = request.form.get('new_pet_size', 'medium')
             pet_notes = request.form.get('new_pet_notes', '').strip()
             if not new_pet_name:
                 flash('Please enter a name for the new pet.', 'danger')
                 conn.close()
                 return render_template('appointments/edit.html', appointment=appointment, customers=customers, pets=pets, current_pet=current_pet)
-            c.execute('INSERT INTO pets (customer_id, pet_name, pet_type, notes) VALUES (?, ?, ?, ?)',
-                      (customer_id, new_pet_name, new_pet_type, pet_notes))
+            c.execute('INSERT INTO pets (customer_id, pet_name, pet_type, size, notes) VALUES (?, ?, ?, ?, ?)',
+                      (customer_id, new_pet_name, new_pet_type, new_pet_size, pet_notes))
             pet_id = c.lastrowid
         c.execute('''
             UPDATE appointments
-            SET customer_id=?, pet_id=?, service=?, date=?, time=?, notes=?
+            SET customer_id=?, pet_id=?, service=?, date=?, time=?, duration=?, notes=?
             WHERE id=?
-        ''', (customer_id, pet_id, service, date, time, notes, id))
+        ''', (customer_id, pet_id, service, date, time, duration, notes, id))
         conn.commit()
         conn.close()
         flash('Appointment updated successfully!', 'success')
@@ -177,3 +225,31 @@ def pets_for_customer(customer_id):
     pets = c.fetchall()
     conn.close()
     return {'pets': [{'id': p[0], 'name': p[1]} for p in pets]}
+
+@appointments_bp.route('/appointments/export/csv')
+@login_required
+def export_appointments_csv():
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('''
+        SELECT a.id, c.name, p.pet_name, p.pet_type, a.service, a.date, a.time, a.notes
+        FROM appointments a
+        JOIN pets p ON a.pet_id = p.id
+        JOIN customers c ON p.customer_id = c.id
+        ORDER BY a.date, a.time
+    ''')
+    appointments = c.fetchall()
+    conn.close()
+    import csv
+    from io import StringIO
+    si = StringIO()
+    cw = csv.writer(si)
+    cw.writerow(['ID', 'Customer', 'Pet Name', 'Pet Type', 'Service', 'Date', 'Time', 'Notes'])
+    cw.writerows(appointments)
+    output = si.getvalue()
+    from flask import Response
+    return Response(
+        output,
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=appointments.csv'}
+    )

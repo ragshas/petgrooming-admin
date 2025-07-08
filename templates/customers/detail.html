@@ -25,6 +25,9 @@
             <li class="nav-item" role="presentation">
               <button class="nav-link" id="history-tab-{{ pet.id }}" data-bs-toggle="tab" data-bs-target="#history-{{ pet.id }}" type="button" role="tab">History</button>
             </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="bills-tab-{{ pet.id }}" data-bs-toggle="tab" data-bs-target="#bills-{{ pet.id }}" type="button" role="tab">Payments</button>
+            </li>
           </ul>
           <div class="tab-content mt-2" id="petTabsContent-{{ pet.id }}">
             <div class="tab-pane fade show active" id="upcoming-{{ pet.id }}" role="tabpanel">
@@ -65,6 +68,27 @@
                   </tr>
                   {% else %}
                   <tr><td colspan="5" class="text-center">No past appointments for this pet</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="tab-pane fade" id="bills-{{ pet.id }}" role="tabpanel">
+              <h6>Payments for this Pet</h6>
+              <table class="table table-sm">
+                <thead>
+                  <tr><th>ID</th><th>Service</th><th>Amount</th><th>Date</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                  {% for bill in pet.bills %}
+                  <tr>
+                    <td>{{ bill[0] }}</td>
+                    <td>{{ bill[1] }}</td>
+                    <td>{{ bill[2] }}</td>
+                    <td>{{ bill[3] }}</td>
+                    <td>{{ bill[4] }}</td>
+                  </tr>
+                  {% else %}
+                  <tr><td colspan="5" class="text-center">No payments for this pet</td></tr>
                   {% endfor %}
                 </tbody>
               </table>

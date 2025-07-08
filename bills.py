@@ -104,17 +104,17 @@ def add_bill():
             'pet_type': cust[5],
             'notes': cust[6]
         }
-    appointments = []
+    # Always fetch all appointments with all needed fields for JS
+    c.execute('''
+        SELECT a.id, a.date, a.service, a.notes, p.pet_name, p.pet_type, p.size, a.time, a.duration, a.customer_id
+        FROM appointments a
+        JOIN pets p ON a.pet_id = p.id
+        ORDER BY a.date DESC, a.time DESC
+    ''')
+    appointments = c.fetchall()
+    # Convert sqlite3.Row objects to dicts for JSON serialization in template
+    appointments = [dict(a) for a in appointments]
     selected_customer_id = request.form.get('customer_id') if request.method == 'POST' else None
-    if selected_customer_id:
-        c.execute('''
-            SELECT a.id, a.date, a.service, p.pet_name
-            FROM appointments a
-            JOIN pets p ON a.pet_id = p.id
-            WHERE a.customer_id = ?
-            ORDER BY a.date DESC, a.time DESC
-        ''', (selected_customer_id,))
-        appointments = c.fetchall()
     if request.method == 'POST':
         customer_id = int(request.form['customer_id'])
         appointment_id = request.form.get('appointment_id')
@@ -122,7 +122,18 @@ def add_bill():
             conn.close()
             flash('Please select an appointment for this bill.', 'danger')
             return render_template('add_bill.html', customers=customers, customer_details=customer_details, appointments=appointments, selected_customer_id=selected_customer_id, current_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-        service = request.form['service']
+        # Fetch appointment details for the selected appointment
+        c.execute('''
+            SELECT a.service
+            FROM appointments a
+            WHERE a.id = ?
+        ''', (appointment_id,))
+        appt = c.fetchone()
+        if not appt:
+            conn.close()
+            flash('Invalid appointment selected.', 'danger')
+            return render_template('add_bill.html', customers=customers, customer_details=customer_details, appointments=appointments, selected_customer_id=selected_customer_id, current_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        service = appt[0]
         amount = request.form['amount']
         date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         notes = request.form['notes']
@@ -235,14 +246,12 @@ def export_bills_csv():
     ''')
     bills = c.fetchall()
     conn.close()
-
     import csv
     from io import StringIO
     si = StringIO()
     cw = csv.writer(si)
-    cw.writerow(['ID', 'Customer', 'Service', 'Amount', 'Date', 'Notes'])  # header
+    cw.writerow(['ID', 'Customer', 'Service', 'Amount', 'Date', 'Notes'])
     cw.writerows(bills)
-
     output = si.getvalue()
     from flask import Response
     return Response(

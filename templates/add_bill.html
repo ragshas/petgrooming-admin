@@ -27,20 +27,7 @@
     </select>
   </div>
 
-  <div id="customer-info" class="mb-3" style="display: none;">
-    <div class="row">
-      <div class="col-md-6"><strong>Phone:</strong> <span id="cust_phone"></span></div>
-      <div class="col-md-6"><strong>Email:</strong> <span id="cust_email"></span></div>
-    </div>
-    <div class="row">
-      <div class="col-md-6"><strong>Pet Name:</strong> <span id="cust_pet_name"></span></div>
-      <div class="col-md-6"><strong>Pet Type:</strong> <span id="cust_pet_type"></span></div>
-    </div>
-    <div class="row">
-      <div class="col-md-12"><strong>Notes:</strong> <span id="cust_notes"></span></div>
-    </div>
-  </div>
-
+  <!-- Appointment selection -->
   <div class="mb-3" id="appointment-div" style="display:none;">
     <label class="form-label">Appointment:</label>
     <select class="form-select" name="appointment_id" id="appointment_id" required>
@@ -49,9 +36,22 @@
     </select>
   </div>
 
-  <div class="mb-3">
-    <label class="form-label">Service:</label>
-    <input class="form-control" type="text" name="service" required>
+  <!-- Pet and appointment details -->
+  <div id="appt-details" class="mb-3" style="display:none;">
+    <div class="row">
+      <div class="col-md-4"><strong>Service:</strong> <span id="appt_service"></span></div>
+      <div class="col-md-4"><strong>Date:</strong> <span id="appt_date"></span></div>
+      <div class="col-md-4"><strong>Time:</strong> <span id="appt_time"></span></div>
+    </div>
+    <div class="row mt-2">
+      <div class="col-md-4"><strong>Duration:</strong> <span id="appt_duration"></span> min</div>
+      <div class="col-md-4"><strong>Pet Name:</strong> <span id="appt_pet_name"></span></div>
+      <div class="col-md-4"><strong>Pet Type:</strong> <span id="appt_pet_type"></span></div>
+    </div>
+    <div class="row mt-2">
+      <div class="col-md-4"><strong>Pet Size:</strong> <span id="appt_pet_size"></span></div>
+      <div class="col-md-8"><strong>Notes:</strong> <span id="appt_notes"></span></div>
+    </div>
   </div>
 
   <div class="mb-3">
@@ -73,46 +73,39 @@
   <a href="{{ url_for('bills.bills') }}" class="btn btn-secondary">Back to Bills</a>
 </form>
 
-<script>
-  const customerDetails = {{ customer_details | tojson | safe }};
+<script type="text/javascript">
+  var appointments = {{ appointments | tojson | safe }};
   document.getElementById('customer_id').addEventListener('change', function() {
     const customerId = this.value;
-    // Fill customer info (existing code)
-    if (customerId && customerDetails[customerId]) {
-      document.getElementById('cust_phone').textContent = customerDetails[customerId].phone || '';
-      document.getElementById('cust_email').textContent = customerDetails[customerId].email || '';
-      document.getElementById('cust_pet_name').textContent = customerDetails[customerId].pet_name || '';
-      document.getElementById('cust_pet_type').textContent = customerDetails[customerId].pet_type || '';
-      document.getElementById('cust_notes').textContent = customerDetails[customerId].notes || '';
-      document.getElementById('customer-info').style.display = 'block';
+    // Show appointments for this customer
+    const apptSelect = document.getElementById('appointment_id');
+    apptSelect.innerHTML = '<option value="" selected disabled>Select Appointment</option>';
+    let found = false;
+    appointments.forEach(function(appt) {
+      if (String(appt.customer_id) === String(customerId)) {
+        apptSelect.innerHTML += `<option value="${appt.id}">${appt.date} - ${appt.service} (${appt.pet_name}, ${appt.pet_type}, ${appt.size})</option>`;
+        found = true;
+      }
+    });
+    document.getElementById('appointment-div').style.display = found ? 'block' : 'none';
+    document.getElementById('appt-details').style.display = 'none';
+  });
+  document.getElementById('appointment_id').addEventListener('change', function() {
+    const apptId = this.value;
+    var appt = appointments.find(function(a) { return String(a.id) === String(apptId); });
+    if (appt) {
+      document.getElementById('appt_service').textContent = appt.service || '';
+      document.getElementById('appt_date').textContent = appt.date || '';
+      document.getElementById('appt_time').textContent = appt.time || '';
+      document.getElementById('appt_duration').textContent = appt.duration || '';
+      document.getElementById('appt_pet_name').textContent = appt.pet_name || '';
+      document.getElementById('appt_pet_type').textContent = appt.pet_type || '';
+      document.getElementById('appt_pet_size').textContent = appt.size || '';
+      document.getElementById('appt_notes').textContent = appt.notes || '';
+      document.getElementById('appt-details').style.display = 'block';
     } else {
-      document.getElementById('customer-info').style.display = 'none';
+      document.getElementById('appt-details').style.display = 'none';
     }
-    // Fetch appointments for this customer
-    fetch(`/appointments/pets_for_customer/${customerId}`)
-      .then(response => response.json())
-      .then(data => {
-        // Now fetch appointments for all pets of this customer
-        let petIds = data.pets.map(p => p.id);
-        if (petIds.length === 0) {
-          document.getElementById('appointment-div').style.display = 'none';
-          return;
-        }
-        fetch(`/bills/appointments_for_pets?pet_ids="${petIds.join(',')}"`)
-          .then(resp => resp.json())
-          .then(apptData => {
-            const apptSelect = document.getElementById('appointment_id');
-            apptSelect.innerHTML = '<option value="" selected disabled>Select Appointment</option>';
-            apptData.appointments.forEach(appt => {
-              apptSelect.innerHTML += `<option value="${appt.id}">${appt.date} - ${appt.service} (${appt.pet_name})</option>`;
-            });
-            document.getElementById('appointment-div').style.display = apptData.appointments.length ? 'block' : 'none';
-            // Auto-select if only one appointment
-            if (apptData.appointments.length === 1) {
-              apptSelect.value = apptData.appointments[0].id;
-            }
-          });
-      });
   });
 </script>
 {% endblock %}

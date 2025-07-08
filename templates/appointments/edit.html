@@ -3,50 +3,89 @@
 <div class="container mt-4">
   <h2>Edit Appointment</h2>
   <form method="post">
-    <div class="mb-3">
-      <label class="form-label">Customer</label>
-      <select name="customer_id" class="form-select" required id="customer-select" disabled>
-        {% for c in customers %}
-        <option value="{{ c[0] }}" {% if c[0]==appointment[1] %}selected{% endif %}>{{ c[1] }}</option>
-        {% endfor %}
-      </select>
-      <input type="hidden" name="customer_id" value="{{ appointment[1] }}">
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Pet</label>
-      <div>
-        <input type="radio" name="pet_option" value="existing" id="pet-existing" checked> <label for="pet-existing">Select Existing</label>
-        <input type="radio" name="pet_option" value="new" id="pet-new" style="margin-left:2em;"> <label for="pet-new">Add New Pet</label>
-      </div>
-      <div id="existing-pet-fields" class="mt-2">
-        <select name="pet_id" class="form-select">
-          <option value="">-- Select Pet --</option>
-          {% for pet in pets %}
-          <option value="{{ pet[0] }}" {% if pet[0]==appointment[2] %}selected{% endif %}>{{ pet[1] }}</option>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Customer</label>
+        <select name="customer_id" class="form-select" required id="customer-select" disabled>
+          {% for c in customers %}
+          <option value="{{ c[0] }}" {% if c[0]==appointment['customer_id'] %}selected{% endif %}>{{ c[1] }}</option>
           {% endfor %}
         </select>
+        <input type="hidden" name="customer_id" value="{{ appointment['customer_id'] }}">
       </div>
-      <div id="new-pet-fields" class="mt-2" style="display:none;">
-        <input type="text" name="new_pet_name" class="form-control mb-2" placeholder="Pet Name">
-        <input type="text" name="new_pet_type" class="form-control mb-2" placeholder="Pet Type">
-        <input type="text" name="new_pet_notes" class="form-control mb-2" placeholder="Notes (optional)">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Pet</label>
+        <div>
+          <input type="radio" name="pet_option" value="existing" id="pet-existing" checked> <label for="pet-existing">Select Existing</label>
+          <input type="radio" name="pet_option" value="new" id="pet-new" style="margin-left:2em;"> <label for="pet-new">Add New Pet</label>
+        </div>
+        <div id="existing-pet-fields" class="mt-2">
+          <select name="pet_id" class="form-select" id="pet-select">
+            <option value="">-- Select Pet --</option>
+            {% for pet in pets %}
+            <option value="{{ pet[0] }}" {% if pet[0]==appointment['pet_id'] or pets|length == 1 %}selected{% endif %}>{{ pet[1] }}</option>
+            {% endfor %}
+          </select>
+          <div class="row mt-2">
+            <div class="col-md-4">
+              <label class="form-label">Pet Type</label>
+              <input type="text" name="pet_type" class="form-control" id="pet-type" value="{{ current_pet[2] if current_pet else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Pet Size</label>
+              <select name="pet_size" class="form-select" id="pet-size">
+                <option value="small" {% if current_pet and current_pet[3]=='small' %}selected{% endif %}>Small</option>
+                <option value="medium" {% if current_pet and current_pet[3]=='medium' %}selected{% endif %}>Medium</option>
+                <option value="large" {% if current_pet and current_pet[3]=='large' %}selected{% endif %}>Large</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Pet Notes</label>
+              <input type="text" name="pet_notes" class="form-control" id="pet-notes" value="{{ current_pet[4] if current_pet else '' }}">
+            </div>
+          </div>
+        </div>
+        <div id="new-pet-fields" class="row mt-2" style="display:none;">
+          <div class="col-md-4 mb-2">
+            <input type="text" name="new_pet_name" class="form-control" placeholder="Pet Name">
+          </div>
+          <div class="col-md-4 mb-2">
+            <input type="text" name="new_pet_type" class="form-control" placeholder="Pet Type">
+          </div>
+          <div class="col-md-4 mb-2">
+            <select name="new_pet_size" class="form-select">
+              <option value="small">Small</option>
+              <option value="medium" selected>Medium</option>
+              <option value="large">Large</option>
+            </select>
+          </div>
+          <div class="col-md-12 mb-2">
+            <input type="text" name="new_pet_notes" class="form-control" placeholder="Notes (optional)">
+          </div>
+        </div>
       </div>
     </div>
-    <div class="mb-3">
-      <label class="form-label">Service</label>
-      <input type="text" name="service" class="form-control" value="{{ appointment[3] }}" required>
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Date</label>
-      <input type="date" name="date" class="form-control" value="{{ appointment[4] }}" required>
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Time</label>
-      <input type="time" name="time" class="form-control" value="{{ appointment[5] }}" required>
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Service</label>
+        <input type="text" name="service" class="form-control" value="{{ appointment['service'] }}" required>
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Date</label>
+        <input type="date" name="date" class="form-control" value="{{ appointment['date'] }}" required>
+      </div>
+      <div class="col-md-2 mb-3">
+        <label class="form-label">Time</label>
+        <input type="time" name="time" class="form-control" value="{{ appointment['time'] }}" required>
+      </div>
+      <div class="col-md-2 mb-3">
+        <label class="form-label">Duration (minutes)</label>
+        <input type="number" name="duration" class="form-control" value="{{ appointment['duration'] }}" min="1" required>
+      </div>
     </div>
     <div class="mb-3">
       <label class="form-label">Notes</label>
-      <textarea name="notes" class="form-control">{{ appointment[6] }}</textarea>
+      <textarea name="notes" class="form-control">{{ appointment['notes'] }}</textarea>
     </div>
     <button type="submit" class="btn btn-primary">Update</button>
     <a href="{{ url_for('appointments.list_appointments') }}" class="btn btn-secondary">Cancel</a>
@@ -54,17 +93,46 @@
 </div>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    var pets = {{ pets|tojson|safe }};
     const petExisting = document.getElementById('pet-existing');
     const petNew = document.getElementById('pet-new');
     const existingFields = document.getElementById('existing-pet-fields');
     const newFields = document.getElementById('new-pet-fields');
+    const newPetName = newFields.querySelector('input[name="new_pet_name"]');
+    const newPetType = newFields.querySelector('input[name="new_pet_type"]');
+    const petSelect = document.getElementById('pet-select');
+    const petType = document.getElementById('pet-type');
+    const petSize = document.getElementById('pet-size');
+    const petNotes = document.getElementById('pet-notes');
+    function updatePetFields() {
+      const selectedId = parseInt(petSelect.value);
+      const pet = pets.find(p => p[0] === selectedId);
+      if (pet) {
+        petType.value = pet[2] || '';
+        petSize.value = pet[3] || 'medium';
+        petNotes.value = pet[4] || '';
+      } else {
+        petType.value = '';
+        petSize.value = 'medium';
+        petNotes.value = '';
+      }
+    }
+    petSelect.addEventListener('change', updatePetFields);
+    if (pets.length === 1) {
+      petSelect.selectedIndex = 1;
+      updatePetFields();
+    }
     function togglePetFields() {
       if (petExisting.checked) {
         existingFields.style.display = '';
         newFields.style.display = 'none';
+        if (newPetName) newPetName.removeAttribute('required');
+        if (newPetType) newPetType.removeAttribute('required');
       } else {
         existingFields.style.display = 'none';
         newFields.style.display = '';
+        if (newPetName) newPetName.setAttribute('required', 'required');
+        if (newPetType) newPetType.removeAttribute('required');
       }
     }
     petExisting.addEventListener('change', togglePetFields);

@@ -3,6 +3,7 @@
 <div class="container mt-4">
   <h2>Appointments</h2>
   <a href="{{ url_for('appointments.add_appointment') }}" class="btn btn-primary mb-3">Add Appointment</a>
+  <a href="{{ url_for('appointments.export_appointments_csv') }}" class="btn btn-outline-success mb-3 ms-2">Export Appointments CSV</a>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -19,9 +20,11 @@
         <th>Customer</th>
         <th>Pet Name</th>
         <th>Pet Type</th>
+        <th>Pet Size</th>
         <th>Service</th>
         <th>Date</th>
         <th>Time</th>
+        <th>Duration (min)</th>
         <th>Notes</th>
         <th>Actions</th>
       </tr>
@@ -37,6 +40,8 @@
         <td>{{ a[5] }}</td>
         <td>{{ a[6] }}</td>
         <td>{{ a[7] }}</td>
+        <td>{{ a[8] }}</td>
+        <td>{{ a[9] }}</td>
         <td>
           <a href="{{ url_for('appointments.edit_appointment', id=a[0]) }}" class="btn btn-sm btn-warning">Edit</a>
           <form action="{{ url_for('appointments.delete_appointment', id=a[0]) }}" method="post" style="display:inline;">
@@ -47,5 +52,19 @@
       {% endfor %}
     </tbody>
   </table>
+  <!-- Pagination controls -->
+  <nav aria-label="Appointments pagination">
+    <ul class="pagination justify-content-center">
+      <li class="page-item {% if page == 1 %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('appointments.list_appointments', page=page-1) }}" tabindex="-1">Previous</a>
+      </li>
+      {% for p in range(1, total_pages+1) %}
+      <li class="page-item {% if p == page %}active{% endif %}"><a class="page-link" href="{{ url_for('appointments.list_appointments', page=p) }}">{{ p }}</a></li>
+      {% endfor %}
+      <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('appointments.list_appointments', page=page+1) }}">Next</a>
+      </li>
+    </ul>
+  </nav>
 </div>
 {% endblock %}

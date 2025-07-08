@@ -19,8 +19,8 @@
       <a href="{{ url_for('customers.list_customers') }}" class="btn btn-secondary w-100">Reset</a>
     </div>
     <div class="col-md-4 text-end">
-      <button type="button" class="btn btn-outline-success btn-sm me-2" disabled>Export</button>
-      <button type="button" class="btn btn-outline-danger btn-sm" disabled>Delete</button>
+      <a href="{{ url_for('customers.export_customers_csv') }}" class="btn btn-outline-success btn-sm me-2">Export Customers CSV</a>
+      <a href="{{ url_for('customers.export_pets_csv') }}" class="btn btn-outline-success btn-sm">Export Pets CSV</a>
     </div>
   </form>
 
@@ -31,7 +31,7 @@
         <th>ID</th>
         <th>Name</th>
         <th>Phone</th>
-        <th>Pet Name</th>
+        <th>Pet Name(s)</th>
         <th>Date Added</th>
         <th>Status</th>
         <th>Actions</th>
@@ -44,7 +44,13 @@
           <td>{{ customer[0] }}</td>
           <td>{{ customer[1] }}</td>
           <td>{{ customer[2] }}</td>
-          <td>{{ customer[3] }}</td>
+          <td>
+            {% if customer[3] %}
+              {% for pet in customer[3] %}{{ pet }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+            {% else %}
+              <span class="text-muted">No pets</span>
+            {% endif %}
+          </td>
           <td>{{ customer[4] }}</td>
           <td>
             {% if customer[5] and customer[5] > 1 %}

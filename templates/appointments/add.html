@@ -2,7 +2,22 @@
 {% block content %}
 <div class="container mt-4">
   <h2>Add Appointment</h2>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
   <form method="post" id="apptForm">
+    {% if form and form.get('date') and form.get('time') %}
+      <input type="hidden" name="date" value="{{ form.get('date') }}">
+      <input type="hidden" name="time" value="{{ form.get('time') }}">
+      <input type="hidden" name="confirm" value="1">
+    {% endif %}
     <div class="row">
       <div class="col-12 mb-3">
         <label class="form-label">Customer Type</label>
@@ -32,18 +47,26 @@
             {% endfor %}
           </select>
         </div>
-        <div id="existingNewPetFields" style="display:none;">
-          <div class="col-md-6 mb-3">
+        <div id="existingNewPetFields" class="row" style="display:none;">
+          <div class="col-md-4 mb-3">
             <label class="form-label">New Pet Name</label>
-            <input type="text" name="new_pet_name" class="form-control">
+            <input type="text" name="existing_new_pet_name" class="form-control">
           </div>
-          <div class="col-md-6 mb-3">
-            <label class="form-label">New Pet Type</label>
-            <input type="text" name="new_pet_type" class="form-control">
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Pet Type</label>
+            <input type="text" name="existing_new_pet_type" class="form-control">
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Pet Size</label>
+            <select name="existing_new_pet_size" class="form-select">
+              <option value="small">Small</option>
+              <option value="medium" selected>Medium</option>
+              <option value="large">Large</option>
+            </select>
           </div>
           <div class="col-md-12 mb-3">
             <label class="form-label">Pet Notes</label>
-            <textarea name="pet_notes" class="form-control"></textarea>
+            <textarea name="existing_new_pet_notes" class="form-control"></textarea>
           </div>
         </div>
       </div>
@@ -60,13 +83,21 @@
           <label class="form-label">Email</label>
           <input type="email" name="new_email" class="form-control">
         </div>
-        <div class="col-md-6 mb-3">
+        <div class="col-md-4 mb-3">
           <label class="form-label">Pet Name</label>
           <input type="text" name="new_pet_name" class="form-control">
         </div>
-        <div class="col-md-6 mb-3">
+        <div class="col-md-4 mb-3">
           <label class="form-label">Pet Type</label>
           <input type="text" name="new_pet_type" class="form-control">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Pet Size</label>
+          <select name="new_pet_size" class="form-select">
+            <option value="small">Small</option>
+            <option value="medium" selected>Medium</option>
+            <option value="large">Large</option>
+          </select>
         </div>
         <div class="col-md-12 mb-3">
           <label class="form-label">Pet Notes</label>
@@ -74,21 +105,27 @@
         </div>
       </div>
       <!-- Appointment fields always visible -->
-      <div class="col-md-6 mb-3">
-        <label class="form-label">Service</label>
-        <input type="text" name="service" class="form-control" required>
-      </div>
-      <div class="col-md-6 mb-3">
-        <label class="form-label">Date</label>
-        <input type="date" name="date" class="form-control" required>
-      </div>
-      <div class="col-md-6 mb-3">
-        <label class="form-label">Time</label>
-        <input type="time" name="time" class="form-control" required>
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Service</label>
+          <input type="text" name="service" class="form-control" required value="{{ form.service if form and form.service else '' }}">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Date</label>
+          <input type="date" name="date" class="form-control" required value="{{ form.date if form and form.date else '' }}">
+        </div>
+        <div class="col-md-2 mb-3">
+          <label class="form-label">Time</label>
+          <input type="time" name="time" class="form-control" required value="{{ form.time if form and form.time else '' }}">
+        </div>
+        <div class="col-md-2 mb-3">
+          <label class="form-label">Duration (minutes)</label>
+          <input type="number" name="duration" class="form-control" min="1" value="{{ form.duration if form and form.duration else 30 }}" required>
+        </div>
       </div>
       <div class="col-12 mb-3">
         <label class="form-label">Notes</label>
-        <textarea name="notes" class="form-control"></textarea>
+        <textarea name="notes" class="form-control">{{ form.notes if form and form.notes else '' }}</textarea>
       </div>
     </div>
     <button type="submit" class="btn btn-primary">Add</button>
@@ -96,6 +133,20 @@
   </form>
 </div>
 <script>
+function clearFields(containerId) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  var inputs = container.querySelectorAll('input, textarea, select');
+  inputs.forEach(function(input) {
+    if (input.type === 'radio' || input.type === 'checkbox') {
+      input.checked = false;
+    } else if (input.tagName === 'SELECT') {
+      input.selectedIndex = 0;
+    } else {
+      input.value = '';
+    }
+  });
+}
 function toggleCustomerType() {
   var isNew = document.getElementById('cust_new').checked;
   document.getElementById('existingCustomerFields').style.display = isNew ? 'none' : '';
@@ -106,21 +157,30 @@ function toggleCustomerType() {
     if (el) el.required = isNew;
   });
   document.getElementsByName('customer_id')[0].required = !isNew;
-  // For existing customer, only require new_pet_name if Add New Pet is selected
+  // Clear both sections to prevent any leftover values
+  clearFields('existingCustomerFields');
+  clearFields('newCustomerFields');
+  // For existing customer, only require existing_new_pet_name if Add New Pet is selected
   togglePetFields();
 }
 function togglePetFields() {
-  var isNew = document.getElementById('cust_new').checked;
   var petSelect = document.getElementById('petSelect');
   var newPetFields = document.getElementById('existingNewPetFields');
-  if (!isNew && petSelect && petSelect.value === '') {
+  var newPetName = document.querySelector('#existingNewPetFields input[name="existing_new_pet_name"]');
+  var newPetType = document.querySelector('#existingNewPetFields input[name="existing_new_pet_type"]');
+  var isNewCustomer = document.getElementById('cust_new').checked;
+  if (isNewCustomer) {
     newPetFields.style.display = '';
-    var el = document.getElementsByName('new_pet_name')[0];
-    if (el) el.required = true;
+    if (newPetName) newPetName.removeAttribute('required'); // not required in this flow
+    if (newPetType) newPetType.removeAttribute('required');
+  } else if (petSelect && petSelect.value === "") {
+    newPetFields.style.display = '';
+    if (newPetName) newPetName.setAttribute('required', 'required');
+    if (newPetType) newPetType.removeAttribute('required');
   } else {
     newPetFields.style.display = 'none';
-    var el = document.getElementsByName('new_pet_name')[0];
-    if (el) el.required = isNew;
+    if (newPetName) newPetName.removeAttribute('required');
+    if (newPetType) newPetType.removeAttribute('required');
   }
 }
 document.addEventListener('DOMContentLoaded', function() {
@@ -128,7 +188,10 @@ document.addEventListener('DOMContentLoaded', function() {
   var petSelect = document.getElementById('petSelect');
   if (petSelect) {
     petSelect.addEventListener('change', togglePetFields);
+    togglePetFields();
   }
+  document.getElementById('cust_existing').addEventListener('change', toggleCustomerType);
+  document.getElementById('cust_new').addEventListener('change', toggleCustomerType);
 });
 function loadPetsForCustomer() {
   var customerId = document.getElementById('customerSelect').value;

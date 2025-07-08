@@ -123,6 +123,7 @@ def customer_detail(id):
     # Fetch all pets for this customer
     c.execute('SELECT id, pet_name, pet_type, notes FROM pets WHERE customer_id = ?', (id,))
     pets = c.fetchall()
+    pets_names = [pet[1] for pet in pets]
     pets_with_appointments = []
     for pet in pets:
         # Upcoming: today or future
@@ -141,16 +142,26 @@ def customer_detail(id):
             ORDER BY a.date DESC, a.time DESC
         ''', (pet[0], today_str))
         history = c.fetchall()
+        # Fetch bills for this pet
+        c.execute('''
+            SELECT b.id, b.service, b.amount, b.date, b.notes
+            FROM bills b
+            JOIN appointments a ON b.appointment_id = a.id
+            WHERE a.pet_id = ?
+            ORDER BY b.date DESC
+        ''', (pet[0],))
+        bills = c.fetchall()
         pets_with_appointments.append({
             'id': pet[0],
             'pet_name': pet[1],
             'pet_type': pet[2],
             'notes': pet[3],
             'upcoming': upcoming,
-            'history': history
+            'history': history,
+            'bills': bills
         })
     conn.close()
-    return render_template('customers/detail.html', customer=customer, pets=pets_with_appointments)
+    return render_template('customers/detail.html', customer=customer, pets=pets_with_appointments, pets_names=pets_names)
 
 @customers_bp.route('/customers/export/csv')
 @login_required
@@ -178,6 +189,33 @@ def export_customers_csv():
         output,
         mimetype='text/csv',
         headers={'Content-Disposition': 'attachment; filename=customers.csv'}
+    )
+
+@customers_bp.route('/pets/export/csv')
+@login_required
+def export_pets_csv():
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('''
+        SELECT pets.id, customers.name, pets.pet_name, pets.pet_type, pets.notes
+        FROM pets
+        JOIN customers ON pets.customer_id = customers.id
+        ORDER BY customers.name, pets.pet_name
+    ''')
+    pets = c.fetchall()
+    conn.close()
+    import csv
+    from io import StringIO
+    si = StringIO()
+    cw = csv.writer(si)
+    cw.writerow(['Pet ID', 'Customer', 'Pet Name', 'Pet Type', 'Notes'])
+    cw.writerows(pets)
+    output = si.getvalue()
+    from flask import Response
+    return Response(
+        output,
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=pets.csv'}
     )
 
 @customers_bp.route('/customers/<int:customer_id>/print_pdf')
