@@ -104,6 +104,16 @@ def dashboard():
     c.execute("SELECT COUNT(*) FROM customers WHERE strftime('%Y-%m', date_added) = strftime('%Y-%m', 'now')")
     new_customers_this_month = c.fetchone()[0]
 
+    # Returning customers: unique customers with more than one bill
+    c.execute('''
+        SELECT COUNT(*) FROM (
+            SELECT customer_id FROM bills
+            GROUP BY customer_id
+            HAVING COUNT(*) > 1
+        )
+    ''')
+    returning_customers = c.fetchone()[0]
+
 # Most popular services by count (last 6 months)
     c.execute('''
     SELECT service, COUNT(*) as count
@@ -141,6 +151,7 @@ def dashboard():
     bills_today_count=bills_today_count,
     bills_today_amount=bills_today_amount,
     new_customers_this_month=new_customers_this_month,
+    returning_customers=returning_customers,
     chart_labels=labels,
     chart_values=values,
     recent_bills=recent_bills,

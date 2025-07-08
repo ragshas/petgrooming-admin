@@ -12,6 +12,9 @@ bills_bp = Blueprint('bills', __name__)
 @bills_bp.route('/bills')
 @login_required
 def bills():
+    page = int(request.args.get('page', 1))
+    per_page = 10
+    offset = (page - 1) * per_page
     conn = get_db()
     c = conn.cursor()
 
@@ -28,33 +31,56 @@ def bills():
         LEFT JOIN customers ON bills.customer_id = customers.id
         WHERE 1=1
     '''
+    count_query = '''
+        SELECT COUNT(*)
+        FROM bills
+        LEFT JOIN customers ON bills.customer_id = customers.id
+        WHERE 1=1
+    '''
     params = []
+    count_params = []
 
     if customer:
         query += ' AND customers.name LIKE ?'
+        count_query += ' AND customers.name LIKE ?'
         params.append(f'%{customer}%')
+        count_params.append(f'%{customer}%')
     if service:
         query += ' AND bills.service LIKE ?'
+        count_query += ' AND bills.service LIKE ?'
         params.append(f'%{service}%')
+        count_params.append(f'%{service}%')
     if start_date:
         query += ' AND date(bills.date) >= date(?)'
+        count_query += ' AND date(bills.date) >= date(?)'
         params.append(start_date)
+        count_params.append(start_date)
     if end_date:
         query += ' AND date(bills.date) <= date(?)'
+        count_query += ' AND date(bills.date) <= date(?)'
         params.append(end_date)
+        count_params.append(end_date)
 
-    query += ' ORDER BY bills.date DESC'
+    query += ' ORDER BY bills.date DESC LIMIT ? OFFSET ?'
+    params += [per_page, offset]
+
+    c.execute(count_query, count_params)
+    total_bills = c.fetchone()[0]
 
     c.execute(query, params)
     bills_with_names = c.fetchall()
     conn.close()
+
+    total_pages = (total_bills + per_page - 1) // per_page
 
     return render_template('bills.html',
         bills=bills_with_names,
         customer=customer,
         service=service,
         start_date=start_date,
-        end_date=end_date
+        end_date=end_date,
+        page=page,
+        total_pages=total_pages
     )
 
 
@@ -78,20 +104,37 @@ def add_bill():
             'pet_type': cust[5],
             'notes': cust[6]
         }
+    appointments = []
+    selected_customer_id = request.form.get('customer_id') if request.method == 'POST' else None
+    if selected_customer_id:
+        c.execute('''
+            SELECT a.id, a.date, a.service, p.pet_name
+            FROM appointments a
+            JOIN pets p ON a.pet_id = p.id
+            WHERE a.customer_id = ?
+            ORDER BY a.date DESC, a.time DESC
+        ''', (selected_customer_id,))
+        appointments = c.fetchall()
     if request.method == 'POST':
         customer_id = int(request.form['customer_id'])
+        appointment_id = request.form.get('appointment_id')
+        if not appointment_id:
+            conn.close()
+            flash('Please select an appointment for this bill.', 'danger')
+            return render_template('add_bill.html', customers=customers, customer_details=customer_details, appointments=appointments, selected_customer_id=selected_customer_id, current_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         service = request.form['service']
         amount = request.form['amount']
         date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         notes = request.form['notes']
-        c.execute("INSERT INTO bills (customer_id, service, amount, date, notes) VALUES (?, ?, ?, ?, ?)",
-                  (customer_id, service, amount, date, notes))
+        c.execute("INSERT INTO bills (customer_id, appointment_id, service, amount, date, notes) VALUES (?, ?, ?, ?, ?, ?)",
+                  (customer_id, appointment_id, service, amount, date, notes))
+        bill_id = c.lastrowid
         conn.commit()
         conn.close()
         flash('Bill added successfully!', 'success')
-        return render_template('add_bill.html', customers=customers, customer_details=customer_details, current_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        return redirect(url_for('bills.bill_detail', id=bill_id))
     conn.close()
-    return render_template('add_bill.html', customers=customers, customer_details=customer_details, current_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    return render_template('add_bill.html', customers=customers, customer_details=customer_details, appointments=appointments, selected_customer_id=selected_customer_id, current_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
 @bills_bp.route('/bills/<int:bill_id>/pdf')
 @login_required
@@ -207,3 +250,27 @@ def export_bills_csv():
         mimetype='text/csv',
         headers={'Content-Disposition': 'attachment; filename=bills.csv'}
     )
+
+@bills_bp.route('/bills/appointments_for_pets')
+@login_required
+def appointments_for_pets():
+    pet_ids = request.args.get('pet_ids', '').replace('"', '').split(',')
+    pet_ids = [pid for pid in pet_ids if pid.isdigit()]
+    if not pet_ids:
+        return {'appointments': []}
+    conn = get_db()
+    c = conn.cursor()
+    placeholders = ','.join(['?'] * len(pet_ids))
+    c.execute(f'''
+        SELECT a.id, a.date, a.service, p.pet_name
+        FROM appointments a
+        JOIN pets p ON a.pet_id = p.id
+        WHERE a.pet_id IN ({placeholders})
+        ORDER BY a.date DESC, a.time DESC
+    ''', pet_ids)
+    appointments = [
+        {'id': row[0], 'date': row[1], 'service': row[2], 'pet_name': row[3]}
+        for row in c.fetchall()
+    ]
+    conn.close()
+    return {'appointments': appointments}

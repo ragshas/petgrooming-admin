@@ -36,7 +36,6 @@
       <th>Date</th>
       <th>Notes</th>
       <th>Actions</th>
-      <th>Actions</th>
     </tr>
   </thead>
   <tbody>
@@ -49,26 +48,44 @@
       <td>{{ bill[4] }}</td>
       <td>{{ bill[5] }}</td>
       <td>
-        <a href="/bills/{{ bill[0] }}/pdf" class="btn btn-sm btn-secondary">Print / PDF</a>
-      </td>
-      <td>
+        <a href="/bills/{{ bill[0] }}/pdf" class="btn btn-sm btn-secondary">PDF</a>
         <a href="/bills/{{ bill[0] }}/edit" class="btn btn-sm btn-primary">Edit</a>
         <a href="/bills/{{ bill[0] }}/delete" class="btn btn-sm btn-danger"
           onclick="return confirm('Are you sure you want to delete this bill?');">Delete</a>
-        <a href="/bills/{{ bill[0] }}/pdf" class="btn btn-sm btn-secondary">PDF</a>
         <a class="btn btn-sm btn-outline-primary mb-2" href="{{ url_for('bills.export_bills_csv') }}">Export Bills
           CSV</a>
-
       </td>
-
     </tr>
     {% else %}
     <tr>
-      <td colspan="6" class="text-center">No bills found.</td>
+      <td colspan="7" class="text-center">No bills found.</td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+
+<!-- Pagination Controls -->
+{% if total_pages > 1 %}
+<nav aria-label="Bills pagination">
+  <ul class="pagination justify-content-center">
+    <li class="page-item {% if page == 1 %}disabled{% endif %}">
+      <a class="page-link" href="?page=1{% if customer %}&customer={{ customer }}{% endif %}{% if service %}&service={{ service }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">First</a>
+    </li>
+    <li class="page-item {% if page == 1 %}disabled{% endif %}">
+      <a class="page-link" href="?page={{ page-1 }}{% if customer %}&customer={{ customer }}{% endif %}{% if service %}&service={{ service }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">Previous</a>
+    </li>
+    {% for p in range(1, total_pages+1) %}
+    <li class="page-item {% if page == p %}active{% endif %}"><a class="page-link" href="?page={{ p }}{% if customer %}&customer={{ customer }}{% endif %}{% if service %}&service={{ service }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ p }}</a></li>
+    {% endfor %}
+    <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+      <a class="page-link" href="?page={{ page+1 }}{% if customer %}&customer={{ customer }}{% endif %}{% if service %}&service={{ service }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">Next</a>
+    </li>
+    <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+      <a class="page-link" href="?page={{ total_pages }}{% if customer %}&customer={{ customer }}{% endif %}{% if service %}&service={{ service }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">Last</a>
+    </li>
+  </ul>
+</nav>
+{% endif %}
 
 <a href="/add_bill" class="btn btn-success">Add New Bill</a>
 {% endblock %}

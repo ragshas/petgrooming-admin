@@ -1,40 +1,5 @@
+<!-- This template is deprecated. Adding customers is now handled via appointments. -->
 {% extends "base.html" %}
-
-{% block title %}Add Customer{% endblock %}
-
 {% block content %}
-<h1>Add Customer</h1>
-<form method="post">
-  <div class="mb-3">
-    <label for="name" class="form-label">Name:</label>
-    <input id="name" class="form-control" type="text" name="name" required>
-  </div>
-  
-  <div class="mb-3">
-    <label for="phone" class="form-label">Phone:</label>
-    <input id="phone" class="form-control" type="text" name="phone">
-  </div>
-  
-  <div class="mb-3">
-    <label for="email" class="form-label">Email:</label>
-    <input id="email" class="form-control" type="email" name="email">
-  </div>
-  
-  <div class="mb-3">
-    <label for="pet_name" class="form-label">Pet Name:</label>
-    <input id="pet_name" class="form-control" type="text" name="pet_name">
-  </div>
-  
-  <div class="mb-3">
-    <label for="pet_type" class="form-label">Pet Type:</label>
-    <input id="pet_type" class="form-control" type="text" name="pet_type">
-  </div>
-  
-  <div class="mb-3">
-    <label for="notes" class="form-label">Notes:</label>
-    <textarea id="notes" class="form-control" name="notes"></textarea>
-  </div>
-  
-  <button type="submit" class="btn btn-primary">Add Customer</button>
-</form>
+<div class="alert alert-info mt-4">Adding customers directly is now handled via appointments. <a href="{{ url_for('appointments.add_appointment') }}" class="btn btn-primary ms-2">Add Appointment</a></div>
 {% endblock %}

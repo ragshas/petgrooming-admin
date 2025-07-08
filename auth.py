@@ -41,7 +41,7 @@ def logout():
 def users():
     if session.get('role') != 'admin':
         flash('Only admin can manage users.', 'danger')
-        return redirect(url_for('customers.customers'))
+        return redirect(url_for('customers.list_customers'))
     conn = get_db()
     c = conn.cursor()
     c.execute('SELECT * FROM users')
@@ -53,7 +53,7 @@ def users():
 def add_user():
     if session.get('role') != 'admin':
         flash('Only admin can add users.', 'danger')
-        return redirect(url_for('customers.customers'))
+        return redirect(url_for('customers.list_customers'))
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -87,7 +87,7 @@ def add_user():
 def edit_user(user_id):
     if session.get('role') != 'admin':
         flash('Only admin can edit users.', 'danger')
-        return redirect(url_for('customers.customers'))
+        return redirect(url_for('customers.list_customers'))
     conn = get_db()
     c = conn.cursor()
     if request.method == 'POST':
@@ -140,7 +140,7 @@ def admin_auth():
                 conn.commit()
                 conn.close()
                 flash('Customer updated successfully (admin override).', 'success')
-                return redirect(url_for('customers.customers'))
+                return redirect(url_for('customers.list_customers'))
             elif action == 'edit_bill' and 'pending_edit_bill' in session:
                 form_data = session.pop('pending_edit_bill')
                 conn = get_db()
@@ -155,7 +155,7 @@ def admin_auth():
             session['admin_override'] = {'action': action, 'target_id': target_id}
             flash('Admin authorization successful. Please retry your action.', 'success')
             if action in ['edit_customer', 'delete_customer']:
-                return redirect(url_for('customers.customers'))
+                return redirect(url_for('customers.list_customers'))
             elif action in ['edit_bill', 'delete_bill']:
                 return redirect(url_for('bills.bills'))
         else:

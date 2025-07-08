@@ -5,48 +5,77 @@
   <table class="table">
     <tr><th>ID</th><td>{{ customer[0] }}</td></tr>
     <tr><th>Phone</th><td>{{ customer[2] }}</td></tr>
-    <tr><th>Pet Name</th><td>{{ customer[3] }}</td></tr>
+    <tr><th>Email</th><td>{{ customer[3] }}</td></tr>
     <tr><th>Date Added</th><td>{{ customer[4] }}</td></tr>
-    <tr><th>Total Spent</th><td>Rs {{ total_spent }}</td></tr>
   </table>
 
-  <h4>Recent Bills</h4>
-  <table class="table">
-    <thead>
-      <tr><th>ID</th><th>Service</th><th>Amount</th><th>Date</th></tr>
-    </thead>
-    <tbody>
-      {% for bill in recent_bills %}
-      <tr>
-        <td><a href="{{ url_for('bills.bill_detail', id=bill[0]) }}">{{ bill[0] }}</a></td>
-        <td>{{ bill[1] }}</td>
-        <td>Rs {{ bill[2] }}</td>
-        <td>{{ bill[3] }}</td>
-      </tr>
-      {% else %}
-      <tr><td colspan="4" class="text-center">No recent bills</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <h4>Upcoming Appointments</h4>
-  <table class="table">
-    <thead>
-      <tr><th>ID</th><th>Service</th><th>Date</th><th>Time</th></tr>
-    </thead>
-    <tbody>
-      {% for appt in upcoming_appointments %}
-      <tr>
-        <td>{{ appt[0] }}</td>
-        <td>{{ appt[1] }}</td>
-        <td>{{ appt[2] }}</td>
-        <td>{{ appt[3] }}</td>
-      </tr>
-      {% else %}
-      <tr><td colspan="4" class="text-center">No upcoming appointments</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <h4>Pets</h4>
+  {% if pets %}
+    {% for pet in pets %}
+      <div class="card mb-3">
+        <div class="card-header">
+          <strong>{{ pet.pet_name }}</strong> <span class="text-muted">({{ pet.pet_type }})</span>
+        </div>
+        <div class="card-body">
+          {% if pet.notes %}<div><em>Notes:</em> {{ pet.notes }}</div>{% endif %}
+          <ul class="nav nav-tabs" id="petTabs-{{ pet.id }}" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="upcoming-tab-{{ pet.id }}" data-bs-toggle="tab" data-bs-target="#upcoming-{{ pet.id }}" type="button" role="tab">Upcoming</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="history-tab-{{ pet.id }}" data-bs-toggle="tab" data-bs-target="#history-{{ pet.id }}" type="button" role="tab">History</button>
+            </li>
+          </ul>
+          <div class="tab-content mt-2" id="petTabsContent-{{ pet.id }}">
+            <div class="tab-pane fade show active" id="upcoming-{{ pet.id }}" role="tabpanel">
+              <h6>Upcoming Appointments</h6>
+              <table class="table table-sm">
+                <thead>
+                  <tr><th>ID</th><th>Service</th><th>Date</th><th>Time</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                  {% for appt in pet.upcoming %}
+                  <tr>
+                    <td>{{ appt[0] }}</td>
+                    <td>{{ appt[1] }}</td>
+                    <td>{{ appt[2] }}</td>
+                    <td>{{ appt[3] }}</td>
+                    <td>{{ appt[4] }}</td>
+                  </tr>
+                  {% else %}
+                  <tr><td colspan="5" class="text-center">No upcoming appointments for this pet</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="tab-pane fade" id="history-{{ pet.id }}" role="tabpanel">
+              <h6>History of Customer Appointment</h6>
+              <table class="table table-sm">
+                <thead>
+                  <tr><th>ID</th><th>Service</th><th>Date</th><th>Time</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                  {% for appt in pet.history %}
+                  <tr>
+                    <td>{{ appt[0] }}</td>
+                    <td>{{ appt[1] }}</td>
+                    <td>{{ appt[2] }}</td>
+                    <td>{{ appt[3] }}</td>
+                    <td>{{ appt[4] }}</td>
+                  </tr>
+                  {% else %}
+                  <tr><td colspan="5" class="text-center">No past appointments for this pet</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-info">No pets found for this customer.</div>
+  {% endif %}
 
   <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
 </div>

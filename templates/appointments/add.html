@@ -2,37 +2,152 @@
 {% block content %}
 <div class="container mt-4">
   <h2>Add Appointment</h2>
-  <form method="post">
-    <div class="mb-3">
-      <label class="form-label">Customer</label>
-      <select name="customer_id" class="form-select" required>
-        {% for c in customers %}
-        <option value="{{ c[0] }}">{{ c[1] }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Pet Name</label>
-      <input type="text" name="pet_name" class="form-control" required>
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Service</label>
-      <input type="text" name="service" class="form-control" required>
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Date</label>
-      <input type="date" name="date" class="form-control" required>
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Time</label>
-      <input type="time" name="time" class="form-control" required>
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Notes</label>
-      <textarea name="notes" class="form-control"></textarea>
+  <form method="post" id="apptForm">
+    <div class="row">
+      <div class="col-12 mb-3">
+        <label class="form-label">Customer Type</label>
+        <div>
+          <input type="radio" name="customer_type" value="existing" id="cust_existing" checked onchange="toggleCustomerType()">
+          <label for="cust_existing">Existing Customer</label>
+          <input type="radio" name="customer_type" value="new" id="cust_new" class="ms-3" onchange="toggleCustomerType()">
+          <label for="cust_new">New Customer</label>
+        </div>
+      </div>
+      <div id="existingCustomerFields" class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Customer</label>
+          <select name="customer_id" class="form-select" id="customerSelect" required onchange="loadPetsForCustomer()">
+            <option value="">Select Customer</option>
+            {% for c in customers %}
+            <option value="{{ c[0] }}" {% if selected_customer_id and c[0]|string == selected_customer_id|string %}selected{% endif %}>{{ c[1] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Select Pet</label>
+          <select name="pet_id" class="form-select" id="petSelect" onchange="togglePetFields()">
+            <option value="">-- Add New Pet --</option>
+            {% for p in pets %}
+            <option value="{{ p[0] }}">{{ p[1] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div id="existingNewPetFields" style="display:none;">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">New Pet Name</label>
+            <input type="text" name="new_pet_name" class="form-control">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">New Pet Type</label>
+            <input type="text" name="new_pet_type" class="form-control">
+          </div>
+          <div class="col-md-12 mb-3">
+            <label class="form-label">Pet Notes</label>
+            <textarea name="pet_notes" class="form-control"></textarea>
+          </div>
+        </div>
+      </div>
+      <div id="newCustomerFields" class="row" style="display:none;">
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Name</label>
+          <input type="text" name="new_name" class="form-control">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Phone</label>
+          <input type="text" name="new_phone" class="form-control">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" name="new_email" class="form-control">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Pet Name</label>
+          <input type="text" name="new_pet_name" class="form-control">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Pet Type</label>
+          <input type="text" name="new_pet_type" class="form-control">
+        </div>
+        <div class="col-md-12 mb-3">
+          <label class="form-label">Pet Notes</label>
+          <textarea name="new_pet_notes" class="form-control"></textarea>
+        </div>
+      </div>
+      <!-- Appointment fields always visible -->
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Service</label>
+        <input type="text" name="service" class="form-control" required>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Date</label>
+        <input type="date" name="date" class="form-control" required>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Time</label>
+        <input type="time" name="time" class="form-control" required>
+      </div>
+      <div class="col-12 mb-3">
+        <label class="form-label">Notes</label>
+        <textarea name="notes" class="form-control"></textarea>
+      </div>
     </div>
     <button type="submit" class="btn btn-primary">Add</button>
     <a href="{{ url_for('appointments.list_appointments') }}" class="btn btn-secondary">Cancel</a>
   </form>
 </div>
+<script>
+function toggleCustomerType() {
+  var isNew = document.getElementById('cust_new').checked;
+  document.getElementById('existingCustomerFields').style.display = isNew ? 'none' : '';
+  document.getElementById('newCustomerFields').style.display = isNew ? '' : 'none';
+  // Required logic for new customer fields
+  ['new_name','new_phone','new_pet_name'].forEach(function(name) {
+    var el = document.getElementsByName(name)[0];
+    if (el) el.required = isNew;
+  });
+  document.getElementsByName('customer_id')[0].required = !isNew;
+  // For existing customer, only require new_pet_name if Add New Pet is selected
+  togglePetFields();
+}
+function togglePetFields() {
+  var isNew = document.getElementById('cust_new').checked;
+  var petSelect = document.getElementById('petSelect');
+  var newPetFields = document.getElementById('existingNewPetFields');
+  if (!isNew && petSelect && petSelect.value === '') {
+    newPetFields.style.display = '';
+    var el = document.getElementsByName('new_pet_name')[0];
+    if (el) el.required = true;
+  } else {
+    newPetFields.style.display = 'none';
+    var el = document.getElementsByName('new_pet_name')[0];
+    if (el) el.required = isNew;
+  }
+}
+document.addEventListener('DOMContentLoaded', function() {
+  toggleCustomerType();
+  var petSelect = document.getElementById('petSelect');
+  if (petSelect) {
+    petSelect.addEventListener('change', togglePetFields);
+  }
+});
+function loadPetsForCustomer() {
+  var customerId = document.getElementById('customerSelect').value;
+  var petSelect = document.getElementById('petSelect');
+  if (!customerId) {
+    petSelect.innerHTML = '<option value="">-- Add New Pet --</option>';
+    togglePetFields();
+    return;
+  }
+  fetch('/appointments/pets_for_customer/' + customerId)
+    .then(response => response.json())
+    .then(data => {
+      var options = '<option value="">-- Add New Pet --</option>';
+      data.pets.forEach(function(pet) {
+        options += '<option value="' + pet.id + '">' + pet.name + '</option>';
+      });
+      petSelect.innerHTML = options;
+      togglePetFields();
+    });
+}
+</script>
 {% endblock %}

@@ -18,6 +18,7 @@
         <th>ID</th>
         <th>Customer</th>
         <th>Pet Name</th>
+        <th>Pet Type</th>
         <th>Service</th>
         <th>Date</th>
         <th>Time</th>
@@ -35,6 +36,7 @@
         <td>{{ a[4] }}</td>
         <td>{{ a[5] }}</td>
         <td>{{ a[6] }}</td>
+        <td>{{ a[7] }}</td>
         <td>
           <a href="{{ url_for('appointments.edit_appointment', id=a[0]) }}" class="btn btn-sm btn-warning">Edit</a>
           <form action="{{ url_for('appointments.delete_appointment', id=a[0]) }}" method="post" style="display:inline;">

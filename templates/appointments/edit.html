@@ -5,15 +5,32 @@
   <form method="post">
     <div class="mb-3">
       <label class="form-label">Customer</label>
-      <select name="customer_id" class="form-select" required>
+      <select name="customer_id" class="form-select" required id="customer-select" disabled>
         {% for c in customers %}
         <option value="{{ c[0] }}" {% if c[0]==appointment[1] %}selected{% endif %}>{{ c[1] }}</option>
         {% endfor %}
       </select>
+      <input type="hidden" name="customer_id" value="{{ appointment[1] }}">
     </div>
     <div class="mb-3">
-      <label class="form-label">Pet Name</label>
-      <input type="text" name="pet_name" class="form-control" value="{{ appointment[2] }}" required>
+      <label class="form-label">Pet</label>
+      <div>
+        <input type="radio" name="pet_option" value="existing" id="pet-existing" checked> <label for="pet-existing">Select Existing</label>
+        <input type="radio" name="pet_option" value="new" id="pet-new" style="margin-left:2em;"> <label for="pet-new">Add New Pet</label>
+      </div>
+      <div id="existing-pet-fields" class="mt-2">
+        <select name="pet_id" class="form-select">
+          <option value="">-- Select Pet --</option>
+          {% for pet in pets %}
+          <option value="{{ pet[0] }}" {% if pet[0]==appointment[2] %}selected{% endif %}>{{ pet[1] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div id="new-pet-fields" class="mt-2" style="display:none;">
+        <input type="text" name="new_pet_name" class="form-control mb-2" placeholder="Pet Name">
+        <input type="text" name="new_pet_type" class="form-control mb-2" placeholder="Pet Type">
+        <input type="text" name="new_pet_notes" class="form-control mb-2" placeholder="Notes (optional)">
+      </div>
     </div>
     <div class="mb-3">
       <label class="form-label">Service</label>
@@ -35,4 +52,24 @@
     <a href="{{ url_for('appointments.list_appointments') }}" class="btn btn-secondary">Cancel</a>
   </form>
 </div>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const petExisting = document.getElementById('pet-existing');
+    const petNew = document.getElementById('pet-new');
+    const existingFields = document.getElementById('existing-pet-fields');
+    const newFields = document.getElementById('new-pet-fields');
+    function togglePetFields() {
+      if (petExisting.checked) {
+        existingFields.style.display = '';
+        newFields.style.display = 'none';
+      } else {
+        existingFields.style.display = 'none';
+        newFields.style.display = '';
+      }
+    }
+    petExisting.addEventListener('change', togglePetFields);
+    petNew.addEventListener('change', togglePetFields);
+    togglePetFields();
+  });
+</script>
 {% endblock %}

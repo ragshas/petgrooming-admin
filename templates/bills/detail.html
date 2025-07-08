@@ -10,6 +10,24 @@
     <tr><th>Date</th><td>{{ bill[4] }}</td></tr>
     <tr><th>Notes</th><td>{{ bill[5] or '-' }}</td></tr>
   </table>
-  <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+  {% if appointment %}
+  <h4>Related Appointment</h4>
+  <table class="table table-sm">
+    <tr><th>Appointment ID</th><td>{{ appointment[0] }}</td></tr>
+    <tr><th>Service</th><td>{{ appointment[2] }}</td></tr>
+    <tr><th>Date</th><td>{{ appointment[3] }}</td></tr>
+    <tr><th>Time</th><td>{{ appointment[4] }}</td></tr>
+    <tr><th>Notes</th><td>{{ appointment[5] or '-' }}</td></tr>
+  </table>
+  {% endif %}
+  {% if pet %}
+  <h4>Pet Details</h4>
+  <table class="table table-sm">
+    <tr><th>Name</th><td>{{ pet[0] }}</td></tr>
+    <tr><th>Type</th><td>{{ pet[1] }}</td></tr>
+    <tr><th>Notes</th><td>{{ pet[2] or '-' }}</td></tr>
+  </table>
+  {% endif %}
+  <a href="{{ url_for('bills.bills') }}" class="btn btn-secondary">Back to Bills</a>
 </div>
 {% endblock %}
