@@ -1,3 +1,6 @@
+#what it does is connects to a SQLite database and returns a connection object
+# with row factory set to sqlite3.Row, allowing you to access columns by name.
+
 from functools import wraps
 from flask import session, redirect, url_for, flash
 

@@ -1,0 +1,28 @@
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: petgroom
+      POSTGRES_PASSWORD: petgroompass
+      POSTGRES_DB: petgrooming
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  web:
+    build: .
+    command: flask run --host=0.0.0.0
+    environment:
+      FLASK_APP: app.py
+      FLASK_ENV: development
+      DATABASE_URL: postgresql+psycopg2://petgroom:petgroompass@db:5432/petgrooming
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+volumes:
+  pgdata:

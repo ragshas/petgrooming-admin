@@ -1,4 +1,5 @@
-# db.py
+#used to connect to the SQLite database
+# and return a connection object with row factory set to sqlite3.Row
 import sqlite3
 
 def get_db():

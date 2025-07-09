@@ -1,13 +1,10 @@
 from decorators import login_required
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, make_response,abort
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, make_response, abort
 from db import get_db
 from datetime import datetime
 from weasyprint import HTML
 
-
 bills_bp = Blueprint('bills', __name__)
-
-# bills.py
 
 @bills_bp.route('/bills')
 @login_required
@@ -17,13 +14,11 @@ def bills():
     offset = (page - 1) * per_page
     conn = get_db()
     c = conn.cursor()
-
     # Get filter params from request
     customer = request.args.get('customer', '').strip()
     service = request.args.get('service', '').strip()
     start_date = request.args.get('start_date', '').strip()
     end_date = request.args.get('end_date', '').strip()
-
     # Build query dynamically
     query = '''
         SELECT bills.id, customers.name, bills.service, bills.amount, bills.date, bills.notes
@@ -39,7 +34,6 @@ def bills():
     '''
     params = []
     count_params = []
-
     if customer:
         query += ' AND customers.name LIKE ?'
         count_query += ' AND customers.name LIKE ?'
@@ -56,21 +50,16 @@ def bills():
         query += ' AND bills.date <= ?'
         count_query += ' AND bills.date <= ?'
         params.append(end_date)
-
     query += ' ORDER BY bills.date DESC LIMIT ? OFFSET ?'
     count_query += ' ORDER BY bills.date DESC'
     params += [per_page, offset]
-
     c.execute(count_query, params[:-2])
     total_bills = c.fetchone()[0]
-
     c.execute(query, params)
     bills = c.fetchall()
     conn.close()
-
     total_pages = (total_bills + per_page - 1) // per_page
     return render_template('bills.html', bills=bills, page=page, total_pages=total_pages, customer=customer, service=service, start_date=start_date, end_date=end_date)
-
 
 @bills_bp.route('/add_bill', methods=['GET', 'POST'])
 @login_required

@@ -1,12 +1,10 @@
 from decorators import login_required
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, Response
 import sqlite3
 from db import get_db   # reuse the helper
 from datetime import datetime
 
 customers_bp = Blueprint('customers', __name__)
-
-# customers.py
 
 @customers_bp.route('/customers')
 @login_required
@@ -184,7 +182,6 @@ def export_customers_csv():
     cw.writerows(customers)
 
     output = si.getvalue()
-    from flask import Response
     return Response(
         output,
         mimetype='text/csv',
@@ -211,7 +208,6 @@ def export_pets_csv():
     cw.writerow(['Pet ID', 'Customer', 'Pet Name', 'Pet Type', 'Notes'])
     cw.writerows(pets)
     output = si.getvalue()
-    from flask import Response
     return Response(
         output,
         mimetype='text/csv',
@@ -224,5 +220,3 @@ def print_pdf(customer_id):
     # Placeholder: implement PDF export logic here
     flash('PDF export is not implemented yet.', 'info')
     return redirect(url_for('customers.customer_detail', id=customer_id))
-
-

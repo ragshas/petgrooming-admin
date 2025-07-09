@@ -1,3 +1,5 @@
+# Manual - For clearing all tables in a SQLite database
+# This script will delete all records from specified tables in the database.
 import sqlite3
 
 DB_PATH = "database.db"  # Update path if needed

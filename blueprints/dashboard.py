@@ -114,7 +114,7 @@ def dashboard():
     ''')
     returning_customers = c.fetchone()[0]
 
-# Most popular services by count (last 6 months)
+    # Most popular services by count (last 6 months)
     c.execute('''
     SELECT service, COUNT(*) as count
     FROM bills
@@ -135,7 +135,6 @@ def dashboard():
         LIMIT 5
     ''')
     upcoming_appointments = c.fetchall()
-
 
     conn.close()
 
@@ -166,4 +165,3 @@ def dashboard():
     upcoming_appointments=upcoming_appointments,
     top_services=top_services
 )
-

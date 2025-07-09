@@ -1,7 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from db import get_db
 from decorators import login_required
-from datetime import datetime
+from datetime import datetime, date as dtdate
+import csv
+from io import StringIO
+from flask import Response
 
 appointments_bp = Blueprint('appointments', __name__)
 
@@ -33,7 +36,6 @@ def list_appointments():
 @appointments_bp.route('/appointments/add', methods=['GET', 'POST'])
 @login_required
 def add_appointment():
-    from datetime import date as dtdate
     conn = get_db()
     c = conn.cursor()
     c.execute('SELECT id, name FROM customers')
@@ -54,16 +56,13 @@ def add_appointment():
             if row:
                 customer_id = row[0]
             else:
-                c.execute('INSERT INTO customers (name, phone, email, date_added) VALUES (?, ?, ?, ?)',
-
-                          (name, phone, email, dtdate.today().strftime('%Y-%m-%d')))
+                c.execute('INSERT INTO customers (name, phone, email, date_added) VALUES (?, ?, ?, ?)', (name, phone, email, dtdate.today().strftime('%Y-%m-%d')))
                 customer_id = c.lastrowid
             new_pet_name = request.form.get('new_pet_name', '').strip()
             new_pet_type = request.form.get('new_pet_type', '').strip()
             new_pet_size = request.form.get('new_pet_size', 'medium')
             pet_notes = request.form.get('new_pet_notes', '').strip()
-            c.execute('INSERT INTO pets (customer_id, pet_name, pet_type, size, notes) VALUES (?, ?, ?, ?, ?)',
-                      (customer_id, new_pet_name, new_pet_type, new_pet_size, pet_notes))
+            c.execute('INSERT INTO pets (customer_id, pet_name, pet_type, size, notes) VALUES (?, ?, ?, ?, ?)', (customer_id, new_pet_name, new_pet_type, new_pet_size, pet_notes))
             pet_id = c.lastrowid
             service = request.form.get('service', '').strip()
             date = request.form.get('date')
@@ -81,8 +80,7 @@ def add_appointment():
                 new_pet_type = request.form.get('existing_new_pet_type', '').strip()
                 new_pet_size = request.form.get('existing_new_pet_size', 'medium')
                 pet_notes = request.form.get('existing_new_pet_notes', '').strip()
-                c.execute('INSERT INTO pets (customer_id, pet_name, pet_type, size, notes) VALUES (?, ?, ?, ?, ?)',
-                          (customer_id, new_pet_name, new_pet_type, new_pet_size, pet_notes))
+                c.execute('INSERT INTO pets (customer_id, pet_name, pet_type, size, notes) VALUES (?, ?, ?, ?, ?)', (customer_id, new_pet_name, new_pet_type, new_pet_size, pet_notes))
                 pet_id = c.lastrowid
             else:
                 pet_id = int(pet_id)
@@ -190,8 +188,7 @@ def edit_appointment(id):
                 flash('Please enter a name for the new pet.', 'danger')
                 conn.close()
                 return render_template('appointments/edit.html', appointment=appointment, customers=customers, pets=pets, current_pet=current_pet)
-            c.execute('INSERT INTO pets (customer_id, pet_name, pet_type, size, notes) VALUES (?, ?, ?, ?, ?)',
-                      (customer_id, new_pet_name, new_pet_type, new_pet_size, pet_notes))
+            c.execute('INSERT INTO pets (customer_id, pet_name, pet_type, size, notes) VALUES (?, ?, ?, ?, ?)', (customer_id, new_pet_name, new_pet_type, new_pet_size, pet_notes))
             pet_id = c.lastrowid
         c.execute('''
             UPDATE appointments
@@ -240,14 +237,11 @@ def export_appointments_csv():
     ''')
     appointments = c.fetchall()
     conn.close()
-    import csv
-    from io import StringIO
     si = StringIO()
     cw = csv.writer(si)
     cw.writerow(['ID', 'Customer', 'Pet Name', 'Pet Type', 'Service', 'Date', 'Time', 'Notes'])
     cw.writerows(appointments)
     output = si.getvalue()
-    from flask import Response
     return Response(
         output,
         mimetype='text/csv',

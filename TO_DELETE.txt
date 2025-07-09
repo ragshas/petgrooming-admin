@@ -1,0 +1,1 @@
+# All redundant files have been deleted after blueprint migration.

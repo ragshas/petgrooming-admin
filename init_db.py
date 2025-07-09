@@ -1,3 +1,6 @@
+#manual This is a script to initialize a SQLite database for a pet grooming management system.
+# It creates tables for customers, bills, users, and appointments, and inserts some initial data
+
 import sqlite3
 from werkzeug.security import generate_password_hash
 
