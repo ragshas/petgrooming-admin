@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for
-from decorators import login_required
-from db import get_db
+from ..decorators import login_required
+from ..db import get_db
 
 dashboard_bp = Blueprint('dashboard', __name__)
 

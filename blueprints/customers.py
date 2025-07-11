@@ -1,7 +1,6 @@
-from decorators import login_required
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, Response
-import sqlite3
-from db import get_db   # reuse the helper
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from ..decorators import login_required
+from ..db import get_db   # reuse the helper
 from datetime import datetime
 
 customers_bp = Blueprint('customers', __name__)

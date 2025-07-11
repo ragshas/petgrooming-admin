@@ -1,4 +1,3 @@
-
 services:
   db:
     image: postgres:15
@@ -15,7 +14,7 @@ services:
     build: .
     command: flask run --host=0.0.0.0
     environment:
-      FLASK_APP: app.py
+      FLASK_APP: app:create_app
       FLASK_ENV: development
       DATABASE_URL: postgresql+psycopg2://petgroom:petgroompass@db:5432/petgrooming
     ports:
