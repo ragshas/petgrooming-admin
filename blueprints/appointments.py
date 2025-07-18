@@ -5,8 +5,106 @@ from datetime import datetime, date as dtdate
 import csv
 from io import StringIO
 from flask import Response
+from flask import jsonify
 
 appointments_bp = Blueprint('appointments', __name__)
+
+# API endpoint for FullCalendar events
+from flask import jsonify, request
+from datetime import timedelta
+
+@appointments_bp.route('/api/appointments', methods=['GET', 'POST'])
+@login_required
+def api_appointments():
+    if request.method == 'GET':
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('''
+            SELECT a.id, c.name, p.pet_name, p.size, p.notes, a.service, a.date, a.time, a.duration, a.notes
+            FROM appointments a
+            JOIN pets p ON a.pet_id = p.id
+            JOIN customers c ON p.customer_id = c.id
+            ORDER BY a.date, a.time
+        ''')
+        appointments = c.fetchall()
+        conn.close()
+        events = []
+        for appt in appointments:
+            appt_id, customer_name, pet_name, pet_size, pet_notes, service, date, time, duration, notes = appt
+            start = f"{date}T{time}"
+            end_time = (datetime.strptime(time, '%H:%M') + timedelta(minutes=int(duration))).strftime('%H:%M')
+            end = f"{date}T{end_time}"
+            events.append({
+                'id': appt_id,
+                'title': f"{customer_name} - {pet_name} ({service})",
+                'start': start,
+                'end': end,
+                'extendedProps': {
+                    'customer_name': customer_name,
+                    'pet_name': pet_name,
+                    'pet_size': pet_size,
+                    'pet_notes': pet_notes,
+                    'service': service,
+                    'duration': duration,
+                    'notes': notes
+                }
+            })
+        return jsonify(events)
+    elif request.method == 'POST':
+        data = request.get_json()
+        conn = get_db()
+        c = conn.cursor()
+        # If id is present, update, else create
+        if data.get('id'):
+            # Update appointment
+            c.execute('''
+                UPDATE appointments SET service=?, date=?, time=?, duration=?, notes=? WHERE id=?
+            ''', (data['service'], data['date'], data['time'], data['duration'], data['notes'], data['id']))
+            # Update pet size and notes if provided
+            if 'pet_size' in data or 'pet_notes' in data:
+                c.execute('''
+                    SELECT pet_id FROM appointments WHERE id=?
+                ''', (data['id'],))
+                pet_row = c.fetchone()
+                if pet_row:
+                    pet_id = pet_row[0]
+                    c.execute('''
+                        UPDATE pets SET size=?, notes=? WHERE id=?
+                    ''', (data.get('pet_size', ''), data.get('pet_notes', ''), pet_id))
+            conn.commit()
+            conn.close()
+            return jsonify({'status': 'updated'})
+        else:
+            # Find customer and pet IDs (simple lookup, can be improved)
+            c.execute('SELECT id FROM customers WHERE name=?', (data['customer_name'],))
+            customer_row = c.fetchone()
+            if not customer_row:
+                c.execute('INSERT INTO customers (name, date_added) VALUES (?, ?)', (data['customer_name'], dtdate.today().strftime('%Y-%m-%d')))
+                customer_id = c.lastrowid
+            else:
+                customer_id = customer_row[0]
+            c.execute('SELECT id FROM pets WHERE pet_name=? AND customer_id=?', (data['pet_name'], customer_id))
+            pet_row = c.fetchone()
+            if not pet_row:
+                c.execute('INSERT INTO pets (customer_id, pet_name, size, notes) VALUES (?, ?, ?, ?)', (customer_id, data.get('pet_name', ''), data.get('pet_size', ''), data.get('pet_notes', '')))
+                pet_id = c.lastrowid
+            else:
+                pet_id = pet_row[0]
+                # Update pet size and notes if provided
+                c.execute('UPDATE pets SET size=?, notes=? WHERE id=?', (data.get('pet_size', ''), data.get('pet_notes', ''), pet_id))
+            c.execute('''
+                INSERT INTO appointments (customer_id, pet_id, service, date, time, duration, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (customer_id, pet_id, data['service'], data['date'], data['time'], data['duration'], data['notes']))
+            conn.commit()
+            conn.close()
+            return jsonify({'status': 'created'})
+
+# Calendar view route
+@appointments_bp.route('/appointments/calendar')
+@login_required
+def calendar_view():
+    return render_template('appointments/calendar.html')
 
 @appointments_bp.route('/appointments')
 @login_required

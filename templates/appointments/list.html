@@ -50,6 +50,7 @@
         <th>Time</th>
         <th>Duration (min)</th>
         <th>Notes</th>
+        <th>Status</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -66,6 +67,7 @@
         <td>{{ a[7] }}</td>
         <td>{{ a[8] }}</td>
         <td>{{ a[9] }}</td>
+        <td>{{ a[10] }}</td>
         <td>
           <a href="{{ url_for('appointments.edit_appointment', id=a[0]) }}" class="btn btn-sm btn-warning">Edit</a>
           <form action="{{ url_for('appointments.delete_appointment', id=a[0]) }}" method="post" style="display:inline;">

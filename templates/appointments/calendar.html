@@ -1,0 +1,343 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Appointments Calendar</h2>
+<div id="calendar" style="min-height:600px;"></div>
+
+<!-- Modal for viewing appointment details -->
+<div class="modal fade" id="viewAppointmentModal" tabindex="-1" aria-labelledby="viewAppointmentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="viewAppointmentModalLabel">Booking Information</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-12">
+            <div id="viewDetailsBodyLeft"></div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-end mt-3" id="viewDetailsActions" style="display:none;">
+          <button type="button" class="btn btn-sm btn-warning me-2" id="editAppointmentBtn">Edit</button>
+          <button type="button" class="btn btn-sm btn-danger" id="deleteAppointmentBtn">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for appointment creation/editing -->
+<div class="modal fade" id="appointmentModal" tabindex="-1" aria-labelledby="appointmentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="appointmentModalLabel">Add/Edit Appointment</h5>
+        <button type="button" class="btn-close" id="closeAppointmentModal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="appointmentForm">
+          <input type="hidden" id="appointmentId" name="appointmentId">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Customer</label>
+              <select id="customerNameModal" name="customer_name" class="form-control"></select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Pet</label>
+              <select id="petNameModal" name="pet_name" class="form-control"></select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Pet Size</label>
+              <input type="text" id="petSizeModal" name="pet_size" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Pet Notes</label>
+              <input type="text" id="petNotesModal" name="pet_notes" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label for="service" class="form-label">Service</label>
+              <input type="text" class="form-control" id="service" name="service" required>
+            </div>
+            <div class="col-md-6">
+              <label for="date" class="form-label">Date</label>
+              <input type="date" class="form-control" id="date" name="date" required>
+            </div>
+            <div class="col-md-6">
+              <label for="time" class="form-label">Time</label>
+              <input type="time" class="form-control" id="time" name="time" required>
+            </div>
+            <div class="col-md-6">
+              <label for="duration" class="form-label">Duration (min)</label>
+              <input type="number" class="form-control" id="duration" name="duration" min="15" max="480" required>
+            </div>
+            <div class="col-md-12">
+              <label for="notes" class="form-label">Notes</label>
+              <input type="text" class="form-control" id="notes" name="notes">
+            </div>
+          </div>
+          <div class="d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-primary me-2" id="updateAppointmentBtn">Update</button>
+            <button type="button" class="btn btn-secondary" id="cancelAppointmentModal">Cancel</button>
+          </div>
+        </form>
+<!-- ...existing code... -->
+      </div>
+    </div>
+  </div>
+</div>
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script>
+// Modal close logic
+function closeAppointmentModal() {
+  var modalEl = document.getElementById('appointmentModal');
+  var modal = bootstrap.Modal.getInstance(modalEl);
+  if (modal) modal.hide();
+}
+document.getElementById('closeAppointmentModal').onclick = closeAppointmentModal;
+document.getElementById('cancelAppointmentModal').onclick = closeAppointmentModal;
+
+// Helper to populate customer and pet dropdowns
+function populateCustomerDropdown(selectedCustomer, callback) {
+  fetch('/api/customers')
+    .then(res => res.json())
+    .then(customers => {
+      var select = document.getElementById('customerNameModal');
+      select.innerHTML = '';
+      customers.forEach(c => {
+        var opt = document.createElement('option');
+        opt.value = c.name;
+        opt.textContent = c.name;
+        if (selectedCustomer && selectedCustomer === c.name) opt.selected = true;
+        select.appendChild(opt);
+      });
+      if (callback) callback();
+    });
+}
+
+function populatePetDropdown(customerName, selectedPet, callback) {
+  fetch('/api/pets?customer=' + encodeURIComponent(customerName))
+    .then(res => res.json())
+    .then(pets => {
+      var select = document.getElementById('petNameModal');
+      select.innerHTML = '';
+      pets.forEach(p => {
+        var opt = document.createElement('option');
+        opt.value = p.pet_name;
+        opt.textContent = p.pet_name;
+        if (selectedPet && selectedPet === p.pet_name) opt.selected = true;
+        select.appendChild(opt);
+      });
+      // Populate pet size and notes
+      if (pets.length > 0) {
+        var pet = pets.find(p => p.pet_name === (selectedPet || select.value)) || pets[0];
+        document.getElementById('petSizeModal').value = pet.pet_size || '';
+        document.getElementById('petNotesModal').value = pet.pet_notes || '';
+      } else {
+        document.getElementById('petSizeModal').value = '';
+        document.getElementById('petNotesModal').value = '';
+      }
+      if (callback) callback();
+    });
+}
+
+document.getElementById('customerNameModal').addEventListener('change', function() {
+  populatePetDropdown(this.value);
+});
+document.getElementById('petNameModal').addEventListener('change', function() {
+  var customerName = document.getElementById('customerNameModal').value;
+  populatePetDropdown(customerName, this.value);
+});
+
+// On modal show, populate dropdowns and set backdrop static
+var appointmentModalEl = document.getElementById('appointmentModal');
+appointmentModalEl.addEventListener('show.bs.modal', function (event) {
+  var modal = new bootstrap.Modal(appointmentModalEl, { backdrop: 'static', keyboard: false });
+});
+// Helper to populate customer and pet dropdowns
+function populateCustomerDropdown() {
+  fetch('/api/customers')
+    .then(res => res.json())
+    .then(customers => {
+      var select = document.getElementById('customerNameModal');
+      if (!select) return;
+      select.innerHTML = '';
+      customers.forEach(c => {
+        var opt = document.createElement('option');
+        opt.value = c.name;
+        opt.textContent = c.name;
+        select.appendChild(opt);
+      });
+    });
+}
+
+function populatePetDropdown(customerName) {
+  fetch('/api/pets?customer=' + encodeURIComponent(customerName))
+    .then(res => res.json())
+    .then(pets => {
+      var petNameInput = document.getElementById('petNameModal');
+      var petSizeInput = document.getElementById('petSizeModal');
+      var petNotesInput = document.getElementById('petNotesModal');
+      if (!petNameInput || !petSizeInput || !petNotesInput) return;
+      if (pets.length > 0) {
+        petNameInput.value = pets[0].pet_name || '';
+        petSizeInput.value = pets[0].pet_size || '';
+        petNotesInput.value = pets[0].pet_notes || '';
+      } else {
+        petNameInput.value = '';
+        petSizeInput.value = '';
+        petNotesInput.value = '';
+      }
+    });
+}
+
+document.getElementById('customerNameModal').addEventListener('change', function() {
+  populatePetDropdown(this.value);
+});
+
+// Prevent modal from closing when clicking outside
+var appointmentModalEl = document.getElementById('appointmentModal');
+appointmentModalEl.addEventListener('show.bs.modal', function (event) {
+  var modal = new bootstrap.Modal(appointmentModalEl, { backdrop: 'static', keyboard: false });
+  // Populate dropdowns if needed
+  populateCustomerDropdown();
+  var customerName = document.getElementById('customerNameModal').value;
+  if (customerName) populatePetDropdown(customerName);
+});
+document.addEventListener('DOMContentLoaded', function() {
+  var calendarEl = document.getElementById('calendar');
+  var calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'timeGridWeek',
+    slotMinTime: '06:00:00',
+    slotMaxTime: '20:00:00',
+    allDaySlot: false,
+    nowIndicator: true,
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek,timeGridDay'
+    },
+    events: '/api/appointments', // API endpoint to fetch events
+    editable: true,
+    selectable: true,
+    eventClick: function(info) {
+      // Show read-only modal with details
+      var event = info.event;
+      var detailsHtml = `
+        <div><strong>Customer:</strong> ${event.extendedProps.customer_name || ''}</div>
+        <div><strong>Pet:</strong> ${event.extendedProps.pet_name || ''}</div>
+        <div><strong>Pet Size:</strong> ${event.extendedProps.pet_size || ''}</div>
+        <div><strong>Pet Notes:</strong> ${event.extendedProps.pet_notes || ''}</div>
+        <div><strong>Service:</strong> ${event.extendedProps.service || ''}</div>
+        <div><strong>Date:</strong> ${event.startStr ? event.startStr.split('T')[0] : ''}</div>
+        <div><strong>Time:</strong> ${event.startStr ? event.startStr.split('T')[1].slice(0,5) : ''}</div>
+        <div><strong>Duration:</strong> ${event.extendedProps.duration || ''} min</div>
+        <div><strong>Notes:</strong> ${event.extendedProps.notes || ''}</div>
+      `;
+      document.getElementById('viewDetailsBodyLeft').innerHTML = detailsHtml;
+      // Role-based actions (replace with server-side role check if needed)
+      var userRole = '{{ session["role"] if session["role"] else "user" }}';
+      if (userRole === 'admin' || userRole === 'groomer') {
+        document.getElementById('viewDetailsActions').style.display = 'flex';
+        document.getElementById('editAppointmentBtn').onclick = function() {
+          var editModal = new bootstrap.Modal(document.getElementById('appointmentModal'), { backdrop: 'static', keyboard: false });
+          editModal.show();
+          document.getElementById('appointmentForm').reset();
+          document.getElementById('appointmentId').value = event.id;
+          // Populate customer dropdown and set selected
+          fetch('/api/customers')
+            .then(res => res.json())
+            .then(customers => {
+              var customerSelect = document.getElementById('customerNameModal');
+              customerSelect.innerHTML = '';
+              customers.forEach(c => {
+                var opt = document.createElement('option');
+                opt.value = c.name;
+                opt.textContent = c.name;
+                if (event.extendedProps.customer_name === c.name) opt.selected = true;
+                customerSelect.appendChild(opt);
+              });
+              customerSelect.disabled = false;
+              // Populate pet dropdown and set selected
+              fetch('/api/pets?customer=' + encodeURIComponent(event.extendedProps.customer_name))
+                .then(res => res.json())
+                .then(pets => {
+                  var petSelect = document.getElementById('petNameModal');
+                  petSelect.innerHTML = '';
+                  pets.forEach(p => {
+                    var opt = document.createElement('option');
+                    opt.value = p.pet_name;
+                    opt.textContent = p.pet_name;
+                    if (event.extendedProps.pet_name === p.pet_name) opt.selected = true;
+                    petSelect.appendChild(opt);
+                  });
+                  petSelect.disabled = false;
+                  // Fill pet size and notes for selected pet
+                  var selectedPet = pets.find(p => p.pet_name === event.extendedProps.pet_name);
+                  document.getElementById('petSizeModal').value = selectedPet ? selectedPet.pet_size || '' : '';
+                  document.getElementById('petNotesModal').value = selectedPet ? selectedPet.pet_notes || '' : '';
+                });
+            });
+          document.getElementById('service').value = event.extendedProps.service;
+          if (event.startStr) {
+            document.getElementById('date').value = event.startStr.split('T')[0];
+            document.getElementById('time').value = event.startStr.split('T')[1].slice(0,5);
+          }
+          document.getElementById('duration').value = event.extendedProps.duration;
+          document.getElementById('notes').value = event.extendedProps.notes;
+          document.getElementById('appointmentModalLabel').textContent = 'Edit Appointment';
+          var viewModal = bootstrap.Modal.getInstance(document.getElementById('viewAppointmentModal'));
+          viewModal.hide();
+        };
+        document.getElementById('deleteAppointmentBtn').onclick = function() {
+          if (confirm('Are you sure you want to delete this appointment?')) {
+            fetch('/appointments/delete/' + event.id, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            }).then(() => {
+              calendar.refetchEvents();
+              // Instead of hiding, show modal with status removed
+              var detailsHtml = `
+                <div><strong>Customer:</strong> ${event.extendedProps.customer_name || ''}</div>
+                <div><strong>Pet:</strong> ${event.extendedProps.pet_name || ''}</div>
+                <div><strong>Service:</strong> ${event.extendedProps.service || ''}</div>
+                <div><strong>Date:</strong> ${event.startStr ? event.startStr.split('T')[0] : ''}</div>
+                <div><strong>Time:</strong> ${event.startStr ? event.startStr.split('T')[1].slice(0,5) : ''}</div>
+                <div><strong>Duration:</strong> ${event.extendedProps.duration || ''} min</div>
+                <div><strong>Notes:</strong> ${event.extendedProps.notes || ''}</div>
+                <div class="text-danger mt-2"><strong>Status:</strong> Removed</div>
+              `;
+              document.getElementById('viewDetailsBodyLeft').innerHTML = detailsHtml;
+              document.getElementById('viewDetailsActions').style.display = 'none';
+              var viewModal = new bootstrap.Modal(document.getElementById('viewAppointmentModal'));
+              viewModal.show();
+            });
+          }
+        };
+      } else {
+        document.getElementById('viewDetailsActions').style.display = 'none';
+      }
+      var modal = new bootstrap.Modal(document.getElementById('viewAppointmentModal'));
+      modal.show();
+    },
+    dateClick: function(info) {
+      // Open modal for new appointment (clean add experience)
+      document.getElementById('appointmentForm').reset();
+      document.getElementById('appointmentId').value = '';
+      document.getElementById('customerNameModal').disabled = false;
+      document.getElementById('petNameModal').disabled = false;
+      document.getElementById('date').value = info.dateStr;
+      document.getElementById('appointmentModalLabel').textContent = 'Add Appointment';
+      populateCustomerDropdown(null, function() {
+        populatePetDropdown(document.getElementById('customerNameModal').value);
+      });
+      var modal = new bootstrap.Modal(document.getElementById('appointmentModal'), { backdrop: 'static', keyboard: false });
+      modal.show();
+    }
+  });
+  calendar.render();
+});
+</script>
+{% endblock %}
+        </form>
+
